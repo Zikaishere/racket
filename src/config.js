@@ -1,0 +1,65 @@
+module.exports = {
+  DEFAULT_PREFIX: '.',
+  DEV_PREFIX: 'r.',
+  DEV_IDS: ['880070472434339880'],
+  DEV_LOG_CHANNEL_ID: '1490745526847803543',
+  CURRENCY_SYMBOL: '⚡',
+  CURRENCY_NAME: 'raqs',
+
+  // Economy
+  DAILY_AMOUNT: 1000,
+  DAILY_COOLDOWN: 24 * 60 * 60 * 1000,
+  WORK_MIN: 250,
+  WORK_MAX: 750,
+  WORK_COOLDOWN: 60 * 60 * 1000,
+  ROB_COOLDOWN: 2 * 60 * 60 * 1000,
+  ROB_SUCCESS_RATE: 0.50,
+  ROB_FINE_PERCENT: 0.25,
+  ROB_MIN_BAL: 500,
+
+  // Heist
+  HEIST_MIN_PLAYERS: 2,
+  HEIST_JOIN_WINDOW: 30 * 1000,
+  HEIST_MIN_BET: 1000,
+  HEIST_MAX_BET: 100000,
+
+  // Casino
+  CASINO_MIN_BET: 100,
+  CASINO_MAX_BET: 50000,
+
+  // Ranks & Limits
+  RANK_THRESHOLDS: {
+    Regular: 0,
+    'High Roller': 100000,
+    VIP: 1000000,
+    Whale: 10000000,
+  },
+  RANK_MAX_BETS: {
+    Regular: 50000,
+    'High Roller': 200000,
+    VIP: 1000000,
+    Whale: 5000000,
+  },
+
+  // Syndicate Tax
+  TAX_RATE: 0.05,
+  TAX_THRESHOLD: 5000,
+  EVADE_FINE_RATE: 0.25,
+
+  // Black Market
+  BLACKMARKET_LISTING_FEE: 50,
+  BLACKMARKET_MAX_LISTINGS: 5,
+  BLACKMARKET_EXPIRY: 24 * 60 * 60 * 1000,
+
+  // Colors
+  COLOR_PRIMARY: 0xE63946,
+  COLOR_SUCCESS: 0x2DC653,
+  COLOR_ERROR: 0xFF6B6B,
+  COLOR_WARNING: 0xFFB703,
+  COLOR_INFO: 0x457B9D,
+  COLOR_ECONOMY: 0xFFD700,
+
+  // Embed footer
+  FOOTER: 'Racket Economy Bot',
+  FOOTER_ICON: null,
+};
