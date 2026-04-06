@@ -49,11 +49,11 @@ function buildNavRow() {
       .setCustomId('casino_nav')
       .setPlaceholder('Navigate the Casino...')
       .addOptions([
-        { label: 'Grand Lobby', description: 'Return to the main floor', value: 'lobby', emoji: '??' },
-        { label: 'Cashier', description: 'Exchange your Raqs to Chips', value: 'cashier', emoji: '??' },
-        { label: 'Table Games', description: 'View Blackjack, Roulette, and live tables', value: 'tables', emoji: '??' },
-        { label: 'Slots Area', description: 'View Slots and Vault info', value: 'slots', emoji: '??' },
-        { label: 'VIP Lounge', description: 'Exclusive perks and high stakes', value: 'vip', emoji: '??' },
+        { label: 'Grand Lobby', description: 'Return to the main floor', value: 'lobby', emoji: '🎰' },
+        { label: 'Cashier', description: 'Exchange your Raqs to Chips', value: 'cashier', emoji: '💵' },
+        { label: 'Table Games', description: 'View Blackjack, Roulette, and live tables', value: 'tables', emoji: '🃏' },
+        { label: 'Slots Area', description: 'View Slots and Vault info', value: 'slots', emoji: '🍒' },
+        { label: 'VIP Lounge', description: 'Exclusive perks and high stakes', value: 'vip', emoji: '💎' },
       ])
   );
 }
