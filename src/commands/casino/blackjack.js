@@ -7,6 +7,7 @@ const { CASINO_MIN_BET, CASINO_MAX_BET } = require('../../config');
 
 const SUITS = ['S', 'H', 'C', 'D'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+const HOUSE_BOT_ID = 'house-bot';
 
 function newDeck() {
   const deck = [];
@@ -42,10 +43,16 @@ function formatHand(hand, hideSecond = false) {
   return hand.map((card, index) => (hideSecond && index === 1 ? '?' : `${card.rank}${card.suit}`)).join(' ');
 }
 
+function maybeAddHouseBot(table) {
+  if (table.players.length === 1) {
+    table.players.push({ id: HOUSE_BOT_ID, username: 'House Bot', hand: [], state: 'waiting', isBot: true });
+  }
+}
+
 const renderLobby = (table) => embed.raw(0x457B9D)
   .setTitle(`Blackjack Table [${table.tableId}]`)
   .setDescription(`**${table.players[0].username}** opened a Blackjack table.\n\nBet: ${table.bet.toLocaleString()} chips\nPlayers (${table.players.length}/5):\n${table.players.map(player => `- ${player.username}`).join('\n')}`)
-  .setFooter({ text: 'Other players can join, or the host can start early.' });
+  .setFooter({ text: 'Other players can join, or the host can start early. If nobody joins, the House Bot will sit in.' });
 
 const buildLobbyButtons = (tableId) => new ActionRowBuilder().addComponents(
   new ButtonBuilder().setCustomId(`bj_join_${tableId}`).setLabel('Join Table').setStyle(ButtonStyle.Success),
@@ -75,6 +82,7 @@ const renderTable = (table, hideDealer = true) => {
     let statusText = player.state === 'playing' ? 'Thinking...' : player.state.toUpperCase();
     if (player.state === 'blackjack') statusText = 'BLACKJACK';
     if (player.state === 'bust') statusText = 'BUST';
+    if (player.isBot && player.state === 'playing') statusText = 'BOT PLAYING';
 
     tableEmbed.addFields({
       name: `${marker}${player.username} (${handValue(player.hand)}) - ${statusText}`,
@@ -89,8 +97,9 @@ const renderTable = (table, hideDealer = true) => {
 const sendTurnPrompt = async (interaction, table) => {
   const player = table.players[table.currentPlayerIndex];
   const tableEmbed = renderTable(table);
-  tableEmbed.addFields({ name: 'Turn', value: `<@${player.id}>, it is your turn. Hit or Stand?` });
-  await interaction.update({ embeds: [tableEmbed], components: [buildTurnButtons(table.tableId)] });
+  const turnText = player.isBot ? `${player.username} is taking a turn.` : `<@${player.id}>, it is your turn. Hit or Stand?`;
+  tableEmbed.addFields({ name: 'Turn', value: turnText });
+  await interaction.update({ embeds: [tableEmbed], components: [player.isBot ? [] : buildTurnButtons(table.tableId)] });
 };
 
 const finishGame = async (interaction, table) => {
@@ -104,6 +113,8 @@ const finishGame = async (interaction, table) => {
   }
 
   for (const player of table.players) {
+    if (player.isBot) continue;
+
     const user = await getUser(player.id, table.guildId);
     let won = false;
     let push = false;
@@ -138,6 +149,27 @@ const finishGame = async (interaction, table) => {
   await interaction.update({ embeds: [renderTable(table, false)], components: [] });
 };
 
+const runBotTurn = async (interaction, table) => {
+  const bot = table.players[table.currentPlayerIndex];
+  if (!bot?.isBot) return false;
+
+  while (handValue(bot.hand) < 17) {
+    bot.hand.push(table.deck.pop());
+    if (handValue(bot.hand) > 21) {
+      bot.state = 'bust';
+      return true;
+    }
+  }
+
+  if (handValue(bot.hand) === 21 && bot.hand.length === 2) {
+    bot.state = 'blackjack';
+  } else {
+    bot.state = 'stand';
+  }
+
+  return true;
+};
+
 const nextTurn = async (interaction, table) => {
   table.currentPlayerIndex += 1;
   if (table.currentPlayerIndex >= table.players.length) {
@@ -146,6 +178,11 @@ const nextTurn = async (interaction, table) => {
 
   const nextPlayer = table.players[table.currentPlayerIndex];
   if (nextPlayer.state !== 'playing') {
+    return nextTurn(interaction, table);
+  }
+
+  if (nextPlayer.isBot) {
+    await runBotTurn(interaction, table);
     return nextTurn(interaction, table);
   }
 
@@ -259,6 +296,7 @@ const handleButton = async (interaction) => {
     if (userId !== table.hostId) return interaction.reply({ embeds: [embed.error('Only the host can start the game.')], ephemeral: true });
     if (table.status !== 'lobby') return interaction.reply({ embeds: [embed.error('Game already started.')], ephemeral: true });
 
+    maybeAddHouseBot(table);
     table.status = 'playing';
     table.dealerHand.push(table.deck.pop(), table.deck.pop());
 
@@ -273,6 +311,11 @@ const handleButton = async (interaction) => {
 
     if (table.currentPlayerIndex >= table.players.length) {
       return finishGame(interaction, table);
+    }
+
+    if (table.players[table.currentPlayerIndex].isBot) {
+      await runBotTurn(interaction, table);
+      return nextTurn(interaction, table);
     }
 
     return sendTurnPrompt(interaction, table);
