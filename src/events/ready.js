@@ -8,7 +8,7 @@ module.exports = {
     console.log(`📡 Serving ${client.guilds.cache.size} servers\n`);
 
     client.user.setPresence({
-      activities: [{ name: '.help | racketeering is fun', type: 0 }],
+      activities: [{ name: '.help | Created by difficultyy', type: 0 }],
       status: 'online',
     });
 
