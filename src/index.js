@@ -5,6 +5,7 @@ const CommandHandler = require('./handlers/CommandHandler.js');
 const EventHandler = require('./handlers/EventHandler.js');
 const { validateRequiredEnv } = require('./utils/startup.js');
 const { refundAllPendingGameFunds } = require('./utils/gameFunds.js');
+const { logError } = require('./utils/errorManager.js');
 
 const envErrors = validateRequiredEnv(process.env);
 if (envErrors.length) {
@@ -52,6 +53,10 @@ connectDB().then(() => {
   });
 });
 
-process.on('unhandledRejection', err => {
-  console.error('Unhandled rejection:', err);
+process.on('unhandledRejection', async (err) => {
+  await logError(err, { source: 'process_unhandledRejection' }, client);
+});
+
+process.on('uncaughtException', async (err) => {
+  await logError(err, { source: 'process_uncaughtException' }, client);
 });

@@ -3,6 +3,7 @@ const User = require('../models/User');
 const embed = require('../utils/embed');
 const { DEFAULT_PREFIX, DEV_PREFIX, DEV_IDS } = require('../config');
 const { getDisabledCommandReason, isRestrictedCategory } = require('../utils/commandAccess');
+const { logError, buildUserErrorEmbed } = require('../utils/errorManager');
 
 module.exports = {
   name: 'messageCreate',
@@ -36,8 +37,15 @@ module.exports = {
       try {
         await command.execute({ message, args, client, prefix: DEV_PREFIX, isDev: true, guildData });
       } catch (err) {
-        console.error(`Error in dev command ${command.name}:`, err);
-        message.reply({ embeds: [embed.error('Something went wrong while running that dev command.')] });
+        const errorId = await logError(err, {
+          source: 'message_dev_command',
+          commandName: command.name,
+          userId: message.author.id,
+          guildId: message.guild?.id || null,
+          channelId: message.channel?.id || null,
+          metadata: { args },
+        }, client);
+        message.reply({ embeds: [buildUserErrorEmbed(errorId)] });
       }
       return;
     }
@@ -98,8 +106,15 @@ module.exports = {
     try {
       await command.execute({ message, args, client, guildData, prefix });
     } catch (err) {
-      console.error(`Error in prefix command ${command.name}:`, err);
-      message.reply({ embeds: [embed.error('Something went wrong while running that command.')] });
+      const errorId = await logError(err, {
+        source: 'message_command',
+        commandName: command.name,
+        userId: message.author.id,
+        guildId: message.guild?.id || null,
+        channelId: message.channel?.id || null,
+        metadata: { args },
+      }, client);
+      message.reply({ embeds: [buildUserErrorEmbed(errorId)] });
     }
   }
 };
