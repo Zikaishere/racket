@@ -6,7 +6,14 @@ const { logAudit } = require('../../utils/audit');
 const { CASINO_MIN_BET, CASINO_MAX_BET } = require('../../config');
 const CasinoManager = require('../../handlers/CasinoManager');
 
-const SYMBOLS = ['Cherry', 'Lemon', 'Bell', 'Diamond', 'Seven', 'Card'];
+const SYMBOLS = [
+  { name: 'Cherry', icon: '🍒' },
+  { name: 'Lemon', icon: '🍋' },
+  { name: 'Bell', icon: '🔔' },
+  { name: 'Diamond', icon: '💎' },
+  { name: 'Seven', icon: '7️⃣' },
+  { name: 'Card', icon: '🃏' },
+];
 const PAYOUTS = {
   Seven: 10,
   Diamond: 7,
@@ -55,11 +62,11 @@ const run = async ({ userId, guildId, username, bet, reply, editReply }) => {
 
   const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
   await delay(1200);
-  machineEmbed.setDescription(`[ ${a} | ? | ? ]\n\nSpinning...`);
+  machineEmbed.setDescription(`[ ${a.icon} | ? | ? ]\n\nSpinning...`);
   await editReply(message, { embeds: [machineEmbed] });
 
   await delay(1200);
-  machineEmbed.setDescription(`[ ${a} | ${b} | ? ]\n\nSpinning...`);
+  machineEmbed.setDescription(`[ ${a.icon} | ${b.icon} | ? ]\n\nSpinning...`);
   await editReply(message, { embeds: [machineEmbed] });
 
   await delay(1200);
@@ -68,12 +75,12 @@ const run = async ({ userId, guildId, username, bet, reply, editReply }) => {
   let totalReturn = 0;
   let resultText = '';
 
-  if (a === b && b === c) {
-    const multiplier = PAYOUTS[a] || 2;
+  if (a.name === b.name && b.name === c.name) {
+    const multiplier = PAYOUTS[a.name] || 2;
     netProfit = Math.floor(bet * multiplier);
     totalReturn = bet + netProfit;
-    resultText = `Jackpot. All three match. You won **${netProfit.toLocaleString()}** chips.`;
-  } else if (a === b || b === c || a === c) {
+    resultText = `Jackpot. All three ${a.icon} match. You won **${netProfit.toLocaleString()}** chips.`;
+  } else if (a.name === b.name || b.name === c.name || a.name === c.name) {
     netProfit = Math.floor(bet * 0.5);
     totalReturn = bet + netProfit;
     resultText = `Two of a kind. You won **${netProfit.toLocaleString()}** chips.`;
@@ -94,7 +101,7 @@ const run = async ({ userId, guildId, username, bet, reply, editReply }) => {
 
   machineEmbed
     .setColor(totalReturn > 0 ? 0x2DC653 : 0xFF6B6B)
-    .setDescription(`[ ${a} | ${b} | ${c} ]\n\n${resultText}`)
+    .setDescription(`[ ${a.icon} | ${b.icon} | ${c.icon} ]\n\n${resultText}`)
     .addFields({ name: 'New Chips', value: `**${finalUser.chips.toLocaleString()}**`, inline: true });
 
   await editReply(message, { embeds: [machineEmbed] });
