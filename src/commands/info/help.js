@@ -9,6 +9,7 @@ const CATEGORY_ICONS = {
   blackmarket: '\uD83D\uDD75\uFE0F',
   leaderboard: '\uD83C\uDFC6',
   admin: '\u2699\uFE0F',
+  config: '\uD83D\uDEE0\uFE0F',
   info: '\u2139\uFE0F',
 };
 
@@ -19,6 +20,7 @@ const CATEGORY_DESCRIPTIONS = {
   blackmarket: 'List and buy items anonymously',
   leaderboard: 'See who\'s on top',
   admin: 'Server admin tools',
+  config: 'Server setup and configuration tools',
   info: 'Bot information',
 };
 
@@ -32,7 +34,7 @@ function buildMainEmbed(client, prefix) {
 
   for (const [cat, cmds] of categories) {
     const icon = CATEGORY_ICONS[cat] || '\uD83D\uDCC1';
-    const desc = CATEGORY_DESCRIPTIONS[cat] || '';
+    const desc = CATEGORY_DESCRIPTIONS[cat] || 'Browse commands in this category';
     e.addFields({ name: `${icon} ${cat.charAt(0).toUpperCase() + cat.slice(1)} (${cmds.length})`, value: desc, inline: true });
   }
 
@@ -71,10 +73,11 @@ function buildSelectMenu(client, currentCategory = null) {
     .filter(([cat, cmds]) => cat !== 'dev' && cmds.length > 0)
     .map(([cat]) => {
       const icon = CATEGORY_ICONS[cat] || '\uD83D\uDCC1';
+      const description = CATEGORY_DESCRIPTIONS[cat] || 'Browse commands in this category';
       return new StringSelectMenuOptionBuilder()
         .setLabel(`${cat.charAt(0).toUpperCase() + cat.slice(1)}`)
         .setValue(cat)
-        .setDescription(CATEGORY_DESCRIPTIONS[cat] || '')
+        .setDescription(description)
         .setEmoji(icon.trim())
         .setDefault(cat === currentCategory);
     });
