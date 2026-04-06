@@ -21,10 +21,20 @@ module.exports = {
       const command = client.commands.get(commandName)
         || client.commands.get(client.aliases.get(commandName));
 
-      if (!command?.devOnly) return;
+      if (!command) return;
+
+      if (command.slashOnly) {
+        return message.reply({ embeds: [embed.error('This command can only be used as a slash command.')] });
+      }
+
+      if (command.guildOnly && !message.guild) {
+        return message.reply({ embeds: [embed.error('This command can only be used in a server.')] });
+      }
+
+      const guildData = message.guild ? await Guild.findOrCreate(message.guild.id) : null;
 
       try {
-        await command.execute({ message, args, client, prefix: DEV_PREFIX, isDev: true });
+        await command.execute({ message, args, client, prefix: DEV_PREFIX, isDev: true, guildData });
       } catch (err) {
         console.error(`Error in dev command ${command.name}:`, err);
         message.reply({ embeds: [embed.error('Something went wrong while running that dev command.')] });

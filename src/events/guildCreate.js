@@ -4,7 +4,7 @@ const embed = require('../utils/embed');
 const { DEFAULT_PREFIX, DEV_LOG_CHANNEL_ID } = require('../config');
 const { buildSetupEmbed } = require('../utils/setupMessage');
 
-function findWelcomeChannel(guild) {
+async function findWelcomeChannel(guild) {
   if (guild.systemChannel && guild.systemChannel.permissionsFor(guild.members.me)?.has([
     PermissionsBitField.Flags.ViewChannel,
     PermissionsBitField.Flags.SendMessages,
@@ -13,7 +13,9 @@ function findWelcomeChannel(guild) {
     return guild.systemChannel;
   }
 
-  return guild.channels.cache
+  const fetchedChannels = await guild.channels.fetch().catch(() => guild.channels.cache);
+
+  return fetchedChannels
     .filter(channel => channel.type === ChannelType.GuildText)
     .sort((a, b) => a.rawPosition - b.rawPosition)
     .find(channel => channel.permissionsFor(guild.members.me)?.has([
@@ -27,7 +29,7 @@ module.exports = {
   name: 'guildCreate',
   async execute(guild, client) {
     const guildData = await Guild.findOrCreate(guild.id);
-    const welcomeChannel = findWelcomeChannel(guild);
+    const welcomeChannel = await findWelcomeChannel(guild);
 
     if (welcomeChannel) {
       await welcomeChannel.send({
