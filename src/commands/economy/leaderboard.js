@@ -4,54 +4,65 @@ const User = require('../../models/User');
 const { fmt } = require('../../utils/economy');
 
 const TYPES = {
-  balance:  { field: 'balance',             label: '💰 Richest Members' },
-  earned:   { field: 'totalEarned',         label: '📈 All-Time Earners' },
-  wagered:  { field: 'stats.totalWagered',  label: '🎲 Top Gamblers' },
-  heists:   { field: 'stats.heistsWon',     label: '🔫 Top Heist Leaders' },
+  balance: { field: 'balance', label: 'Server Leaderboard' },
+  earned: { field: 'totalEarned', label: 'All-Time Earners' },
+  wagered: { field: 'stats.totalWagered', label: 'Top Gamblers' },
+  heists: { field: 'stats.heistsWon', label: 'Top Heist Leaders' },
 };
 
+function getValue(user, type) {
+  if (type === 'earned') return fmt(user.totalEarned || 0);
+  if (type === 'wagered') return fmt(user.stats?.totalWagered || 0);
+  if (type === 'heists') return `${user.stats?.heistsWon || 0} wins`;
+  return fmt(user.balance || 0);
+}
+
 const run = async ({ guildId, type, reply }) => {
-  const typeData = TYPES[type] || TYPES.balance;
+  const typeKey = TYPES[type] ? type : 'balance';
+  const typeData = TYPES[typeKey];
   const users = await User.find({ guildId }).sort({ [typeData.field]: -1 }).limit(10);
 
-  if (!users.length) return reply({ embeds: [embed.info('🏆 Leaderboard', 'No data yet!')], ephemeral: true });
+  if (!users.length) {
+    return reply({ embeds: [embed.info('Leaderboard', 'No data yet!')], ephemeral: true });
+  }
 
-  const lines = users.map((u, i) => {
-    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `**${i + 1}.**`;
-    const value = type === 'heists' ? `${u.stats.heistsWon} wins` : fmt(u[typeData.field] ?? u.stats?.[typeData.field.split('.')[1]] ?? 0);
-    return `${medal} <@${u.userId}> — ${value}`;
+  const lines = users.map((user, index) => {
+    const medal = index === 0 ? '??' : index === 1 ? '??' : index === 2 ? '??' : `**${index + 1}.**`;
+    return `${medal} <@${user.userId}> - ${getValue(user, typeKey)}`;
   });
 
-  const e = embed.economy(`🏆 ${typeData.label}`, lines.join('\n'));
-  return reply({ embeds: [e] });
+  return reply({
+    embeds: [embed.economy(`?? ${typeData.label}`, lines.join('\n'))],
+  });
 };
 
 module.exports = {
   name: 'leaderboard',
   aliases: ['lb', 'top', 'richest'],
-  description: 'View the server leaderboard.',
-  usage: '[balance|earned|wagered|heists]',
+  description: 'View the server leaderboard, or use earned, wagered, or heists for alternate rankings.',
+  usage: '[earned|wagered|heists]',
   category: 'economy',
   guildOnly: true,
 
   slash: new SlashCommandBuilder()
     .setName('leaderboard')
     .setDescription('View the server leaderboard')
-    .addStringOption(o => o.setName('type')
-      .setDescription('Leaderboard type')
-      .setRequired(false)
-      .addChoices(
-        { name: 'Balance', value: 'balance' },
-        { name: 'All-Time Earned', value: 'earned' },
-        { name: 'Total Wagered', value: 'wagered' },
-        { name: 'Heists Won', value: 'heists' },
-      )),
+    .addStringOption(option => option.setName('type').setDescription('Optional leaderboard type').setRequired(false).addChoices(
+      { name: 'Balance', value: 'balance' },
+      { name: 'All-Time Earned', value: 'earned' },
+      { name: 'Total Wagered', value: 'wagered' },
+      { name: 'Heists Won', value: 'heists' }
+    )),
 
   async execute({ message, args }) {
-    return run({ guildId: message.guild.id, type: args[0] || 'balance', reply: (d) => message.reply(d) });
+    const type = args[0]?.toLowerCase() || 'balance';
+    if (!TYPES[type]) {
+      return message.reply({ embeds: [embed.error('Usage: `.leaderboard [earned|wagered|heists]`')] });
+    }
+    return run({ guildId: message.guild.id, type, reply: (data) => message.reply(data) });
   },
 
   async executeSlash({ interaction }) {
-    return run({ guildId: interaction.guild.id, type: interaction.options.getString('type') || 'balance', reply: (d) => interaction.reply(d) });
-  }
+    return run({ guildId: interaction.guild.id, type: interaction.options.getString('type') || 'balance', reply: (data) => interaction.reply(data) });
+  },
 };
