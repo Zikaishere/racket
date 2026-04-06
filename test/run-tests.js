@@ -1,10 +1,12 @@
 const { runStartupTests } = require('./startup.test');
 const { runConfigTests } = require('./config.test');
 const { runCommandRegistryTests } = require('./command-registry.test');
+const { runSetupAndBalanceTests } = require('./setup-and-balance.test');
 
 const tests = [
   ['startup validation', runStartupTests],
   ['config invariants', runConfigTests],
+  ['setup and balance', runSetupAndBalanceTests],
   ['command registry', runCommandRegistryTests],
 ];
 

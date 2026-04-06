@@ -14,6 +14,8 @@ const userSchema = new mongoose.Schema({
   lastDaily: { type: Date, default: null },
   lastWork:  { type: Date, default: null },
   lastRob:   { type: Date, default: null },
+  heistCooldownUntil: { type: Date, default: null },
+  wantedUntil: { type: Date, default: null },
 
   // Casino Profile
   casinoRank: { type: String, default: 'Regular' }, // Regular, High Roller, VIP, Whale
@@ -50,11 +52,29 @@ const userSchema = new mongoose.Schema({
   inventory: [{ 
     itemId:   String,
     name:     String,
+    kind: { type: String, default: 'generic' },
+    rarity: { type: String, default: 'common' },
     description: { type: String, default: 'No description.' },
     quantity: { type: Number, default: 1 },
     estimatedValue: { type: Number, default: 0 },
     source: { type: String, default: 'blackmarket' },
+    stackable: { type: Boolean, default: true },
+    stats: {
+      strength: { type: Number, default: 0 },
+      speed: { type: Number, default: 0 },
+      grit: { type: Number, default: 0 }
+    },
     acquiredAt: { type: Date, default: Date.now }
+  }],
+
+  heistHistory: [{
+    target: String,
+    outcome: String,
+    role: String,
+    payout: Number,
+    strategy: String,
+    heatLevel: String,
+    createdAt: { type: Date, default: Date.now }
   }],
 
   createdAt: { type: Date, default: Date.now },

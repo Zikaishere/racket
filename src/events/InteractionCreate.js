@@ -83,14 +83,14 @@ module.exports = {
         return vault?.handleButton(interaction);
       }
 
-      // Heist join button
-      if (id === 'heist_join') {
+      // Heist planning buttons
+      if (id.startsWith('heist_')) {
         const heist = client.commands.get('heist');
         const disabledReason = getDisabledCommandReason(guildData, heist);
         if (disabledReason) {
           return interaction.reply({ embeds: [embed.error(disabledReason)], ephemeral: true });
         }
-        return heist?.handleJoin(interaction);
+        return heist?.handleButton(interaction, client);
       }
 
       return;

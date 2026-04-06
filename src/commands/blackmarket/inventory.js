@@ -23,6 +23,12 @@ const run = async ({ userId, guildId, targetUser, page, reply }) => {
   const description = pageItems
     .map((item, index) => {
       const details = [];
+      if (item.rarity) details.push(item.rarity);
+      if (item.kind === 'chicken' && item.stats) {
+        details.push(`STR ${item.stats.strength || 0}`);
+        details.push(`SPD ${item.stats.speed || 0}`);
+        details.push(`GRT ${item.stats.grit || 0}`);
+      }
       if (item.estimatedValue) details.push(`est. ${item.estimatedValue.toLocaleString()}`);
       if (item.description) details.push(item.description.length > 40 ? `${item.description.slice(0, 40)}...` : item.description);
       return `**${(safePage - 1) * PAGE_SIZE + index + 1}.** ${item.name} x${item.quantity}${details.length ? ` - ${details.join(' | ')}` : ''}`;

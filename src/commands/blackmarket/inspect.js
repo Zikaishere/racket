@@ -32,10 +32,20 @@ const run = async ({ userId, guildId, query, reply }) => {
     .setTitle(`Inventory Item: ${item.name}`)
     .setDescription(item.description || 'No description.')
     .addFields(
+      { name: 'Type', value: item.kind || 'generic', inline: true },
+      { name: 'Rarity', value: item.rarity || 'common', inline: true },
       { name: 'Quantity', value: `${item.quantity}`, inline: true },
       { name: 'Estimated Value', value: item.estimatedValue ? fmt(item.estimatedValue) : 'Unknown', inline: true },
       { name: 'Source', value: item.source || 'Unknown', inline: true }
     );
+
+  if (item.kind === 'chicken' && item.stats) {
+    detailsEmbed.addFields(
+      { name: 'Strength', value: `${item.stats.strength || 0}`, inline: true },
+      { name: 'Speed', value: `${item.stats.speed || 0}`, inline: true },
+      { name: 'Grit', value: `${item.stats.grit || 0}`, inline: true }
+    );
+  }
 
   if (item.acquiredAt) {
     detailsEmbed.setFooter({ text: `Acquired ${new Date(item.acquiredAt).toLocaleString()}` });

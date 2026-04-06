@@ -3,7 +3,7 @@ const embed = require('../../utils/embed');
 const User = require('../../models/User');
 const { fmt } = require('../../utils/economy');
 const { logAudit } = require('../../utils/audit');
-const { WORK_MIN, WORK_MAX, WORK_COOLDOWN } = require('../../config');
+const { WORK_MIN, WORK_MAX, WORK_COOLDOWN, WANTED_WORK_MULTIPLIER } = require('../../config');
 
 const JOBS = [
   'dealt cards at the casino',
@@ -19,9 +19,11 @@ const JOBS = [
 ];
 
 const run = async ({ userId, guildId, reply }) => {
-  await User.findOrCreate(userId, guildId);
+  const currentUser = await User.findOrCreate(userId, guildId);
 
   const earned = Math.floor(Math.random() * (WORK_MAX - WORK_MIN + 1)) + WORK_MIN;
+  const wantedActive = currentUser.wantedUntil && new Date(currentUser.wantedUntil).getTime() > Date.now();
+  const finalEarned = wantedActive ? Math.max(1, Math.floor(earned * WANTED_WORK_MULTIPLIER)) : earned;
   const updated = await User.findOneAndUpdate(
     {
       userId,
@@ -33,7 +35,7 @@ const run = async ({ userId, guildId, reply }) => {
     },
     {
       $set: { lastWork: new Date() },
-      $inc: { balance: earned, totalEarned: earned },
+      $inc: { balance: finalEarned, totalEarned: finalEarned },
     },
     { new: true }
   );
@@ -46,8 +48,9 @@ const run = async ({ userId, guildId, reply }) => {
   }
 
   const job = JOBS[Math.floor(Math.random() * JOBS.length)];
-  await logAudit({ guildId, actorId: userId, targetId: userId, action: 'work_claim', amount: earned, currency: 'wallet', metadata: { job } });
-  return reply({ embeds: [embed.success('Work Complete', `You ${job} and earned ${fmt(earned)}.\n\nNew balance: ${fmt(updated.balance)}`)] });
+  await logAudit({ guildId, actorId: userId, targetId: userId, action: 'work_claim', amount: finalEarned, currency: 'wallet', metadata: { job, wantedPenalty: wantedActive } });
+  const penaltyText = wantedActive ? `\n\nWanted status reduced your payout from ${fmt(earned)} to ${fmt(finalEarned)}.` : '';
+  return reply({ embeds: [embed.success('Work Complete', `You ${job} and earned ${fmt(finalEarned)}.\n\nNew balance: ${fmt(updated.balance)}${penaltyText}`)] });
 };
 
 module.exports = {

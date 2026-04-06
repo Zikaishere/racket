@@ -32,7 +32,9 @@ class CommandHandler {
 
         command.category = category;
         this.client.commands.set(command.name, command);
-        categoryCommands.push(command.name);
+        if (!command.hidden) {
+          categoryCommands.push(command.name);
+        }
 
         // Register aliases for prefix commands
         if (command.aliases) {

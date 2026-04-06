@@ -16,7 +16,7 @@ const run = async ({ fromId, toId, toUser, guildId, amount, reply }) => {
 
 module.exports = {
   name: 'pay',
-  aliases: ['give', 'transfer'],
+  aliases: ['transfer'],
   description: 'Pay another user some raqs.',
   usage: '<user> <amount>',
   category: 'economy',

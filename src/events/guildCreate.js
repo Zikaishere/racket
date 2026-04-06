@@ -4,25 +4,36 @@ const embed = require('../utils/embed');
 const { DEFAULT_PREFIX, DEV_LOG_CHANNEL_ID } = require('../config');
 const { buildSetupEmbed } = require('../utils/setupMessage');
 
-async function findWelcomeChannel(guild) {
-  if (guild.systemChannel && guild.systemChannel.permissionsFor(guild.members.me)?.has([
+const PREFERRED_CHANNEL_NAMES = ['bot-commands', 'bot', 'commands', 'general'];
+
+function canSendInChannel(channel, botMember) {
+  if (!channel || !botMember) return false;
+  if (![ChannelType.GuildText, ChannelType.GuildAnnouncement].includes(channel.type)) return false;
+
+  return channel.permissionsFor(botMember)?.has([
     PermissionsBitField.Flags.ViewChannel,
     PermissionsBitField.Flags.SendMessages,
     PermissionsBitField.Flags.EmbedLinks,
-  ])) {
+  ]);
+}
+
+async function findWelcomeChannel(guild) {
+  const botMember = guild.members.me || await guild.members.fetchMe().catch(() => null);
+  if (!botMember) return null;
+
+  if (canSendInChannel(guild.systemChannel, botMember)) {
     return guild.systemChannel;
   }
 
   const fetchedChannels = await guild.channels.fetch().catch(() => guild.channels.cache);
+  const sendableChannels = fetchedChannels
+    .filter(channel => canSendInChannel(channel, botMember))
+    .sort((a, b) => a.rawPosition - b.rawPosition);
 
-  return fetchedChannels
-    .filter(channel => channel.type === ChannelType.GuildText)
-    .sort((a, b) => a.rawPosition - b.rawPosition)
-    .find(channel => channel.permissionsFor(guild.members.me)?.has([
-      PermissionsBitField.Flags.ViewChannel,
-      PermissionsBitField.Flags.SendMessages,
-      PermissionsBitField.Flags.EmbedLinks,
-    ]));
+  const preferredChannel = PREFERRED_CHANNEL_NAMES
+    .map(name => sendableChannels.find(channel => channel.name?.toLowerCase() === name))
+    .find(Boolean);
+  return preferredChannel || sendableChannels.first() || null;
 }
 
 module.exports = {
@@ -65,4 +76,9 @@ module.exports = {
       console.error(`Failed to send guild join notification to channel ${DEV_LOG_CHANNEL_ID}:`, error);
     }
   },
+};
+
+module.exports._test = {
+  canSendInChannel,
+  findWelcomeChannel,
 };
