@@ -27,12 +27,18 @@ const run = async ({ guildId, type, reply }) => {
   }
 
   const lines = users.map((user, index) => {
-    const medal = index === 0 ? '??' : index === 1 ? '??' : index === 2 ? '??' : `**${index + 1}.**`;
+    const medal = index === 0
+      ? '\uD83E\uDD47'
+      : index === 1
+        ? '\uD83E\uDD48'
+        : index === 2
+          ? '\uD83E\uDD49'
+          : `**${index + 1}.**`;
     return `${medal} <@${user.userId}> - ${getValue(user, typeKey)}`;
   });
 
   return reply({
-    embeds: [embed.economy(`?? ${typeData.label}`, lines.join('\n'))],
+    embeds: [embed.economy(`\uD83C\uDFC6 ${typeData.label}`, lines.join('\n'))],
   });
 };
 
