@@ -5,7 +5,7 @@ const CasinoManager = require('../../handlers/CasinoManager');
 const { reserveFunds, refundReservation, settleReservationsByGameKey } = require('../../utils/gameFunds');
 const { CASINO_MIN_BET, CASINO_MAX_BET } = require('../../config');
 
-const SUITS = ['S', 'H', 'C', 'D'];
+const SUITS = ['♠️', '♥️', '♣️', '♦️'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 const HOUSE_BOT_ID = 'house-bot';
 
@@ -40,7 +40,7 @@ function handValue(hand) {
 }
 
 function formatHand(hand, hideSecond = false) {
-  return hand.map((card, index) => (hideSecond && index === 1 ? '?' : `${card.rank}${card.suit}`)).join(' ');
+  return hand.map((card, index) => (hideSecond && index === 1 ? '🂠' : `${card.rank}${card.suit}`)).join(' ');
 }
 
 function maybeAddHouseBot(table) {
