@@ -30,7 +30,7 @@ function buildMainEmbed(client, prefix) {
 
   const e = embed.raw(0xE63946)
     .setTitle('\uD83C\uDFB0 Racket - Help')
-    .setDescription(`Use the menu below to browse commands by category.\nPrefix: \`${prefix}\` · Slash commands also supported.\nTotal commands: **${totalCommands}**\n\n**Categories:**`);
+    .setDescription(`Use the menu below to browse commands by category.\nPrefix: \`${prefix}\` ï¿½ Slash commands also supported.\nTotal commands: **${totalCommands}**\nFor additional help, join the [support server:](https://discord.gg/JfgfGsFeeZ) \n\n**Categories:**`);
 
   for (const [cat, cmds] of categories) {
     const icon = CATEGORY_ICONS[cat] || '\uD83D\uDCC1';
