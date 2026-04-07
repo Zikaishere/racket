@@ -31,10 +31,16 @@ module.exports = {
     }
 
     try {
-  const result = await eval(`(async () => { ${code} })()`);
+  let result;
+  try {
+    result = await eval(`(async () => (${code}))()`);
+  } catch (e) {
+    console.log('Expression eval failed:', e.message);
+    result = await eval(`(async () => { return ${code} })()`);
+  }
   const output = sanitizeOutput(result);
   return message.reply({
-    embeds: [embed.info('Eval Result', `\`\`\`js\n${output || 'undefined'}\n\`\`\``)],
+    embeds: [embed.info('Eval Result', `\`\`\`js\n${output}\n\`\`\``)],
   });
 } catch (error) {
   const output = sanitizeOutput(error);
