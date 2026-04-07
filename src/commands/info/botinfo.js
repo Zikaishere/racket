@@ -43,7 +43,7 @@ async function run({ client, reply }) {
       { name: '⚡ Node.js', value: process.version, inline: true },
       { name: '📦 discord.js', value: `v${require('discord.js').version}`, inline: true },
       { name: '🖥️ CPU', value: cpuModel, inline: false },
-      { name: '🔗 Links', value: '[Support Server](https://dsc.gg/racket) · [Invite](https://discord.com/oauth2/authorize)', inline: false },
+      { name: '🔗 Links', value: '[Support Server](https://discord.gg/JfgfGsFeeZ) · [Invite](https://discord.com/oauth2/authorize?client_id=1200858817592840264)', inline: false },
     );
 
   return reply({ embeds: [e] });
