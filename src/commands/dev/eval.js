@@ -31,23 +31,16 @@ module.exports = {
     }
 
     try {
-      let result;
-try {
-  // Try as an expression first (e.g. "1 + 1", "client.guilds.cache.size")
-  result = await eval(`(async () => (${code}))()`);
-} catch {
-  // Fall back to statement block (e.g. multi-line code, if statements)
-  result = await eval(`(async () => { ${code} })()`);
+  const result = await eval(`(async () => { ${code} })()`);
+  const output = sanitizeOutput(result);
+  return message.reply({
+    embeds: [embed.info('Eval Result', `\`\`\`js\n${output || 'undefined'}\n\`\`\``)],
+  });
+} catch (error) {
+  const output = sanitizeOutput(error);
+  return message.reply({
+    embeds: [embed.error(`\`\`\`js\n${output}\n\`\`\``)],
+  });
 }
-      const output = sanitizeOutput(result);
-      return message.reply({
-        embeds: [embed.info('Eval Result', `\`\`\`js\n${output || 'undefined'}\n\`\`\``)],
-      });
-    } catch (error) {
-      const output = sanitizeOutput(error);
-      return message.reply({
-        embeds: [embed.error(`\`\`\`js\n${output}\n\`\`\``)],
-      });
-    }
   },
 };
