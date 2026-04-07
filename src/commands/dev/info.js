@@ -16,7 +16,7 @@ function buildInfoEmbed(prefix = DEFAULT_PREFIX) {
 
 module.exports = {
   name: 'info',
-  aliases: ['about', 'botinfo'],
+  aliases: ['about'],
   description: 'Post the server info embed in the current channel.',
   usage: '',
   category: 'info',
