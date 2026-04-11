@@ -16,12 +16,12 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute({ message, guildData }) {
-    const currentGuildData = guildData || await getGuildConfig(message.guild.id);
+    const currentGuildData = guildData || (await getGuildConfig(message.guild.id));
     return message.reply({ embeds: [buildStatusEmbed(currentGuildData)] });
   },
 
   async executeSlash({ interaction, guildData }) {
-    const currentGuildData = guildData || await getGuildConfig(interaction.guild.id);
+    const currentGuildData = guildData || (await getGuildConfig(interaction.guild.id));
     return interaction.reply({ embeds: [buildStatusEmbed(currentGuildData)], ephemeral: true });
   },
 };

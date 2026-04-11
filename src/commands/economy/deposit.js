@@ -19,7 +19,14 @@ const run = async ({ userId, guildId, rawAmount, reply }) => {
 
   const updated = await getUser(userId, guildId);
   await logAudit({ guildId, actorId: userId, targetId: userId, action: 'bank_deposit', amount, currency: 'wallet' });
-  return reply({ embeds: [embed.success('Deposit Successful', `You deposited ${fmt(amount)} into your bank.\n\n**Wallet:** ${fmt(updated.balance)}\n**Bank:** ${fmt(updated.bank)}`)] });
+  return reply({
+    embeds: [
+      embed.success(
+        'Deposit Successful',
+        `You deposited ${fmt(amount)} into your bank.\n\n**Wallet:** ${fmt(updated.balance)}\n**Bank:** ${fmt(updated.bank)}`,
+      ),
+    ],
+  });
 };
 
 module.exports = {
@@ -33,14 +40,24 @@ module.exports = {
   slash: new SlashCommandBuilder()
     .setName('deposit')
     .setDescription('Deposit raqs into your bank account')
-    .addStringOption(o => o.setName('amount').setDescription('Amount or "all"').setRequired(true)),
+    .addStringOption((o) => o.setName('amount').setDescription('Amount or "all"').setRequired(true)),
 
   async execute({ message, args }) {
     if (!args[0]) return message.reply({ embeds: [embed.error('Usage: `.deposit <amount|all>`')] });
-    return run({ userId: message.author.id, guildId: message.guild.id, rawAmount: args[0], reply: data => message.reply(data) });
+    return run({
+      userId: message.author.id,
+      guildId: message.guild.id,
+      rawAmount: args[0],
+      reply: (data) => message.reply(data),
+    });
   },
 
   async executeSlash({ interaction }) {
-    return run({ userId: interaction.user.id, guildId: interaction.guild.id, rawAmount: interaction.options.getString('amount'), reply: data => interaction.reply(data) });
+    return run({
+      userId: interaction.user.id,
+      guildId: interaction.guild.id,
+      rawAmount: interaction.options.getString('amount'),
+      reply: (data) => interaction.reply(data),
+    });
   },
 };

@@ -23,7 +23,8 @@ const run = async ({ userId, guildId, targetUser, page, reply }) => {
     return `**${number}.** ${entry.target} - ${entry.outcome.toUpperCase()} - **${entry.role}** - ${payoutText}\nStrategy: ${entry.strategy} | Heat: ${entry.heatLevel}`;
   });
 
-  const historyEmbed = embed.raw(0x2b2d31)
+  const historyEmbed = embed
+    .raw(0x2b2d31)
     .setTitle(targetUser ? `${targetUser.username}'s Heist History` : 'Your Heist History')
     .setDescription(lines.join('\n\n'))
     .setFooter({ text: `Page ${safePage}/${totalPages} | ${history.length} recorded heist(s)` });
@@ -42,12 +43,12 @@ module.exports = {
   slash: new SlashCommandBuilder()
     .setName('heisthistory')
     .setDescription('View heist history')
-    .addUserOption(o => o.setName('user').setDescription('User to inspect').setRequired(false))
-    .addIntegerOption(o => o.setName('page').setDescription('Page number').setRequired(false).setMinValue(1)),
+    .addUserOption((o) => o.setName('user').setDescription('User to inspect').setRequired(false))
+    .addIntegerOption((o) => o.setName('page').setDescription('Page number').setRequired(false).setMinValue(1)),
 
   async execute({ message, args }) {
     const target = message.mentions.users.first();
-    const filteredArgs = args.filter(arg => !arg.startsWith('<@'));
+    const filteredArgs = args.filter((arg) => !arg.startsWith('<@'));
     const page = parseInt(filteredArgs[0], 10) || 1;
 
     return run({
@@ -55,7 +56,7 @@ module.exports = {
       guildId: message.guild.id,
       targetUser: target,
       page,
-      reply: data => message.reply(data),
+      reply: (data) => message.reply(data),
     });
   },
 
@@ -66,7 +67,7 @@ module.exports = {
       guildId: interaction.guild.id,
       targetUser: target,
       page: interaction.options.getInteger('page') || 1,
-      reply: data => interaction.reply(data),
+      reply: (data) => interaction.reply(data),
     });
   },
 };

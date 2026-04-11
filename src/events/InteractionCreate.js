@@ -23,33 +23,47 @@ module.exports = {
         const user = await User.findOrCreate(interaction.user.id, interaction.guild.id);
         if (user.moderation?.globallyBanned) {
           const reason = user.moderation.globalBanReason ? `\nReason: ${user.moderation.globalBanReason}` : '';
-          return interaction.reply({ embeds: [embed.error(`You are globally banned from using economy and game features.${reason}`)], ephemeral: true });
+          return interaction.reply({
+            embeds: [embed.error(`You are globally banned from using economy and game features.${reason}`)],
+            ephemeral: true,
+          });
         }
         if (user.moderation?.frozen) {
           const reason = user.moderation.freezeReason ? `\nReason: ${user.moderation.freezeReason}` : '';
-          return interaction.reply({ embeds: [embed.error(`Your account is frozen and cannot use economy features right now.${reason}`)], ephemeral: true });
+          return interaction.reply({
+            embeds: [embed.error(`Your account is frozen and cannot use economy features right now.${reason}`)],
+            ephemeral: true,
+          });
         }
       }
 
       if (command.adminOnly && interaction.guild) {
-        const isAdmin = interaction.member.permissions.has('Administrator')
-          || (guildData?.adminRoles || []).some(r => interaction.member.roles.cache.has(r));
+        const isAdmin =
+          interaction.member.permissions.has('Administrator') ||
+          (guildData?.adminRoles || []).some((r) => interaction.member.roles.cache.has(r));
         if (!isAdmin)
-          return interaction.reply({ embeds: [embed.error('You need to be an administrator to use this command.')], ephemeral: true });
+          return interaction.reply({
+            embeds: [embed.error('You need to be an administrator to use this command.')],
+            ephemeral: true,
+          });
       }
 
       try {
         await command.executeSlash({ interaction, client, guildData });
       } catch (err) {
-        const errorId = await logError(err, {
-          source: 'slash_command',
-          commandName: command.name,
-          userId: interaction.user.id,
-          guildId: interaction.guild?.id || null,
-          channelId: interaction.channel?.id || null,
-          interactionType: 'chat_input',
-          metadata: { commandName: interaction.commandName },
-        }, client);
+        const errorId = await logError(
+          err,
+          {
+            source: 'slash_command',
+            commandName: command.name,
+            userId: interaction.user.id,
+            guildId: interaction.guild?.id || null,
+            channelId: interaction.channel?.id || null,
+            interactionType: 'chat_input',
+            metadata: { commandName: interaction.commandName },
+          },
+          client,
+        );
         const e = buildUserErrorEmbed(errorId);
         interaction.replied || interaction.deferred
           ? interaction.followUp({ embeds: [e], ephemeral: true })
@@ -63,7 +77,13 @@ module.exports = {
       const id = interaction.customId;
 
       // Blackjack buttons
-      if (id.startsWith('bj_hit_') || id.startsWith('bj_stand_') || id.startsWith('bj_join_') || id.startsWith('bj_start_') || id.startsWith('bj_leave_')) {
+      if (
+        id.startsWith('bj_hit_') ||
+        id.startsWith('bj_stand_') ||
+        id.startsWith('bj_join_') ||
+        id.startsWith('bj_start_') ||
+        id.startsWith('bj_leave_')
+      ) {
         const blackjack = client.commands.get('blackjack');
         const disabledReason = getDisabledCommandReason(guildData, blackjack);
         if (disabledReason) {
@@ -72,15 +92,19 @@ module.exports = {
         try {
           return await blackjack?.handleButton(interaction);
         } catch (err) {
-          const errorId = await logError(err, {
-            source: 'button_interaction',
-            commandName: 'blackjack',
-            userId: interaction.user.id,
-            guildId: interaction.guild?.id || null,
-            channelId: interaction.channel?.id || null,
-            interactionType: 'button',
-            metadata: { customId: id },
-          }, client);
+          const errorId = await logError(
+            err,
+            {
+              source: 'button_interaction',
+              commandName: 'blackjack',
+              userId: interaction.user.id,
+              guildId: interaction.guild?.id || null,
+              channelId: interaction.channel?.id || null,
+              interactionType: 'button',
+              metadata: { customId: id },
+            },
+            client,
+          );
           return interaction.replied || interaction.deferred
             ? interaction.followUp({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true })
             : interaction.reply({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true });
@@ -97,15 +121,19 @@ module.exports = {
         try {
           return await double?.handleButton(interaction);
         } catch (err) {
-          const errorId = await logError(err, {
-            source: 'button_interaction',
-            commandName: 'double',
-            userId: interaction.user.id,
-            guildId: interaction.guild?.id || null,
-            channelId: interaction.channel?.id || null,
-            interactionType: 'button',
-            metadata: { customId: id },
-          }, client);
+          const errorId = await logError(
+            err,
+            {
+              source: 'button_interaction',
+              commandName: 'double',
+              userId: interaction.user.id,
+              guildId: interaction.guild?.id || null,
+              channelId: interaction.channel?.id || null,
+              interactionType: 'button',
+              metadata: { customId: id },
+            },
+            client,
+          );
           return interaction.replied || interaction.deferred
             ? interaction.followUp({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true })
             : interaction.reply({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true });
@@ -122,15 +150,19 @@ module.exports = {
         try {
           return await vault?.handleButton(interaction);
         } catch (err) {
-          const errorId = await logError(err, {
-            source: 'button_interaction',
-            commandName: 'vault',
-            userId: interaction.user.id,
-            guildId: interaction.guild?.id || null,
-            channelId: interaction.channel?.id || null,
-            interactionType: 'button',
-            metadata: { customId: id },
-          }, client);
+          const errorId = await logError(
+            err,
+            {
+              source: 'button_interaction',
+              commandName: 'vault',
+              userId: interaction.user.id,
+              guildId: interaction.guild?.id || null,
+              channelId: interaction.channel?.id || null,
+              interactionType: 'button',
+              metadata: { customId: id },
+            },
+            client,
+          );
           return interaction.replied || interaction.deferred
             ? interaction.followUp({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true })
             : interaction.reply({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true });
@@ -147,15 +179,19 @@ module.exports = {
         try {
           return await heist?.handleButton(interaction, client);
         } catch (err) {
-          const errorId = await logError(err, {
-            source: 'button_interaction',
-            commandName: 'heist',
-            userId: interaction.user.id,
-            guildId: interaction.guild?.id || null,
-            channelId: interaction.channel?.id || null,
-            interactionType: 'button',
-            metadata: { customId: id },
-          }, client);
+          const errorId = await logError(
+            err,
+            {
+              source: 'button_interaction',
+              commandName: 'heist',
+              userId: interaction.user.id,
+              guildId: interaction.guild?.id || null,
+              channelId: interaction.channel?.id || null,
+              interactionType: 'button',
+              metadata: { customId: id },
+            },
+            client,
+          );
           return interaction.replied || interaction.deferred
             ? interaction.followUp({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true })
             : interaction.reply({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true });
@@ -177,15 +213,19 @@ module.exports = {
         try {
           return await lobby?.handleNav(interaction);
         } catch (err) {
-          const errorId = await logError(err, {
-            source: 'select_menu_interaction',
-            commandName: 'lobby',
-            userId: interaction.user.id,
-            guildId: interaction.guild?.id || null,
-            channelId: interaction.channel?.id || null,
-            interactionType: 'select_menu',
-            metadata: { customId: id },
-          }, client);
+          const errorId = await logError(
+            err,
+            {
+              source: 'select_menu_interaction',
+              commandName: 'lobby',
+              userId: interaction.user.id,
+              guildId: interaction.guild?.id || null,
+              channelId: interaction.channel?.id || null,
+              interactionType: 'select_menu',
+              metadata: { customId: id },
+            },
+            client,
+          );
           return interaction.replied || interaction.deferred
             ? interaction.followUp({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true })
             : interaction.reply({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true });
@@ -194,5 +234,5 @@ module.exports = {
       // Help menu is handled by its own collector inside help.js
       return;
     }
-  }
+  },
 };

@@ -11,7 +11,7 @@ function getBailCost(user) {
   return {
     remainingMs,
     remainingMinutes,
-    cost: BAIL_BASE_COST + (remainingMinutes * BAIL_COST_PER_MINUTE),
+    cost: BAIL_BASE_COST + remainingMinutes * BAIL_COST_PER_MINUTE,
   };
 }
 
@@ -20,13 +20,17 @@ const run = async ({ userId, guildId, reply }) => {
   const { remainingMs, remainingMinutes, cost } = getBailCost(user);
 
   if (remainingMs <= 0) {
-    return reply({ embeds: [embed.info('Bail Desk', 'You are not wanted right now. There is nothing to bail out of.')] });
+    return reply({
+      embeds: [embed.info('Bail Desk', 'You are not wanted right now. There is nothing to bail out of.')],
+    });
   }
 
   if (user.balance < cost) {
     return reply({
       embeds: [
-        embed.error(`Bail costs ${fmt(cost)} right now, and you only have ${fmt(user.balance)}.\n\nWanted time remaining: ${remainingMinutes} minute(s).`),
+        embed.error(
+          `Bail costs ${fmt(cost)} right now, and you only have ${fmt(user.balance)}.\n\nWanted time remaining: ${remainingMinutes} minute(s).`,
+        ),
       ],
       ephemeral: true,
     });
@@ -50,7 +54,7 @@ const run = async ({ userId, guildId, reply }) => {
     embeds: [
       embed.success(
         'Bail Paid',
-        `You paid ${fmt(cost)} to clear your wanted status.\n\nNew balance: ${fmt(user.balance)}`
+        `You paid ${fmt(cost)} to clear your wanted status.\n\nNew balance: ${fmt(user.balance)}`,
       ),
     ],
   });
@@ -64,16 +68,18 @@ module.exports = {
   category: 'economy',
   guildOnly: true,
 
-  slash: new SlashCommandBuilder()
-    .setName('bail')
-    .setDescription('Pay bail to remove your wanted status'),
+  slash: new SlashCommandBuilder().setName('bail').setDescription('Pay bail to remove your wanted status'),
 
   async execute({ message }) {
-    return run({ userId: message.author.id, guildId: message.guild.id, reply: data => message.reply(data) });
+    return run({ userId: message.author.id, guildId: message.guild.id, reply: (data) => message.reply(data) });
   },
 
   async executeSlash({ interaction }) {
-    return run({ userId: interaction.user.id, guildId: interaction.guild.id, reply: data => interaction.reply(data) });
+    return run({
+      userId: interaction.user.id,
+      guildId: interaction.guild.id,
+      reply: (data) => interaction.reply(data),
+    });
   },
   _test: {
     getBailCost,

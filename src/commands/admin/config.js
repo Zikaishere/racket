@@ -11,6 +11,13 @@ module.exports = {
   hidden: true,
 
   async execute({ message, prefix }) {
-    return message.reply({ embeds: [embed.info('Config Moved', `Configuration now uses standalone commands. Try \`${prefix}config\` or \`${prefix}configsetup\`.`)] });
+    return message.reply({
+      embeds: [
+        embed.info(
+          'Config Moved',
+          `Configuration now uses standalone commands. Try \`${prefix}config\` or \`${prefix}configsetup\`.`,
+        ),
+      ],
+    });
   },
 };

@@ -21,6 +21,9 @@ module.exports = {
   },
 
   async executeSlash({ interaction, guildData }) {
-    return interaction.reply({ embeds: [buildConfigOverviewEmbed(guildData?.prefix || DEFAULT_PREFIX)], ephemeral: true });
+    return interaction.reply({
+      embeds: [buildConfigOverviewEmbed(guildData?.prefix || DEFAULT_PREFIX)],
+      ephemeral: true,
+    });
   },
 };

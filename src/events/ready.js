@@ -15,5 +15,5 @@ module.exports = {
     // Register slash commands now that client is ready
     const handler = new CommandHandler(client);
     await handler.registerSlash();
-  }
+  },
 };

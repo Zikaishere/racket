@@ -31,22 +31,22 @@ module.exports = {
     }
 
     try {
-  let result;
-  try {
-    result = await eval(`(async () => (${code}))()`);
-  } catch (e) {
-    console.log('Expression eval failed:', e.message);
-    result = await eval(`(async () => { return ${code} })()`);
-  }
-  const output = sanitizeOutput(result);
-  return message.reply({
-    embeds: [embed.info('Eval Result', `\`\`\`js\n${output}\n\`\`\``)],
-  });
-} catch (error) {
-  const output = sanitizeOutput(error);
-  return message.reply({
-    embeds: [embed.error(`\`\`\`js\n${output}\n\`\`\``)],
-  });
-}
+      let result;
+      try {
+        result = await eval(`(async () => (${code}))()`);
+      } catch (e) {
+        console.log('Expression eval failed:', e.message);
+        result = await eval(`(async () => { return ${code} })()`);
+      }
+      const output = sanitizeOutput(result);
+      return message.reply({
+        embeds: [embed.info('Eval Result', `\`\`\`js\n${output}\n\`\`\``)],
+      });
+    } catch (error) {
+      const output = sanitizeOutput(error);
+      return message.reply({
+        embeds: [embed.error(`\`\`\`js\n${output}\n\`\`\``)],
+      });
+    }
   },
 };

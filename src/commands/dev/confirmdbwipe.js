@@ -21,17 +21,23 @@ module.exports = {
     const token = args[0];
     const pending = getDbWipeRequest(message.author.id);
     if (!pending) {
-      return message.reply({ embeds: [embed.error(`There is no active database wipe request. Run \`${DEV_PREFIX}dbwipe\` first.`)] });
+      return message.reply({
+        embeds: [embed.error(`There is no active database wipe request. Run \`${DEV_PREFIX}dbwipe\` first.`)],
+      });
     }
 
     if (!token || token !== pending.token) {
-      return message.reply({ embeds: [embed.error('That confirmation token is invalid. The database was not touched.')] });
+      return message.reply({
+        embeds: [embed.error('That confirmation token is invalid. The database was not touched.')],
+      });
     }
 
     try {
       await mongoose.connection.db.dropDatabase();
       clearDbWipeRequest(message.author.id);
-      return message.reply({ embeds: [embed.success('Database Wiped', 'The entire Mongo database was deleted successfully.')] });
+      return message.reply({
+        embeds: [embed.success('Database Wiped', 'The entire Mongo database was deleted successfully.')],
+      });
     } catch (error) {
       return message.reply({ embeds: [embed.error(`Database wipe failed: ${error.message}`)] });
     }

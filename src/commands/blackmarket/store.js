@@ -6,14 +6,16 @@ const { listStoreItems, getStoreItem, createInventoryItemFromStore } = require('
 
 function buildBrowseEmbed() {
   const items = listStoreItems();
-  const storeEmbed = embed.raw(0x2b2d31)
+  const storeEmbed = embed
+    .raw(0x2b2d31)
     .setTitle('Item Store')
     .setDescription('Buy useful animals and contraband for the underground scene.');
 
   for (const item of items) {
-    const statsText = item.kind === 'chicken'
-      ? `STR ${item.stats.strength} | SPD ${item.stats.speed} | GRT ${item.stats.grit}`
-      : 'No stats';
+    const statsText =
+      item.kind === 'chicken'
+        ? `STR ${item.stats.strength} | SPD ${item.stats.speed} | GRT ${item.stats.grit}`
+        : 'No stats';
 
     storeEmbed.addFields({
       name: `${item.name} - ${fmt(item.price)}`,
@@ -26,7 +28,8 @@ function buildBrowseEmbed() {
 }
 
 function buildInspectEmbed(item) {
-  return embed.raw(0x2b2d31)
+  return embed
+    .raw(0x2b2d31)
     .setTitle(`Store Item: ${item.name}`)
     .setDescription(item.description)
     .addFields(
@@ -81,12 +84,22 @@ module.exports = {
   slash: new SlashCommandBuilder()
     .setName('store')
     .setDescription('Browse and buy items from the underground store')
-    .addSubcommand(s => s.setName('browse').setDescription('Browse the store'))
-    .addSubcommand(s => s.setName('inspect').setDescription('Inspect a store item')
-      .addStringOption(o => o.setName('item').setDescription('Store item ID').setRequired(true)))
-    .addSubcommand(s => s.setName('buy').setDescription('Buy a store item')
-      .addStringOption(o => o.setName('item').setDescription('Store item ID').setRequired(true))
-      .addIntegerOption(o => o.setName('quantity').setDescription('How many to buy').setRequired(false).setMinValue(1).setMaxValue(5))),
+    .addSubcommand((s) => s.setName('browse').setDescription('Browse the store'))
+    .addSubcommand((s) =>
+      s
+        .setName('inspect')
+        .setDescription('Inspect a store item')
+        .addStringOption((o) => o.setName('item').setDescription('Store item ID').setRequired(true)),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName('buy')
+        .setDescription('Buy a store item')
+        .addStringOption((o) => o.setName('item').setDescription('Store item ID').setRequired(true))
+        .addIntegerOption((o) =>
+          o.setName('quantity').setDescription('How many to buy').setRequired(false).setMinValue(1).setMaxValue(5),
+        ),
+    ),
 
   async execute({ message, args }) {
     const sub = (args[0] || 'browse').toLowerCase();
@@ -104,7 +117,14 @@ module.exports = {
     if (sub === 'buy') {
       const result = await handleBuy(message.author.id, message.guild.id, args[1], parseInt(args[2], 10) || 1);
       if (result.error) return message.reply({ embeds: [embed.error(result.error)] });
-      return message.reply({ embeds: [embed.success('Purchase Complete', `You bought **${result.item.name}** x${result.buyQuantity} for ${fmt(result.totalCost)}.\n\nNew balance: ${fmt(result.user.balance)}`)] });
+      return message.reply({
+        embeds: [
+          embed.success(
+            'Purchase Complete',
+            `You bought **${result.item.name}** x${result.buyQuantity} for ${fmt(result.totalCost)}.\n\nNew balance: ${fmt(result.user.balance)}`,
+          ),
+        ],
+      });
     }
 
     return message.reply({ embeds: [embed.error('Usage: `.store <browse|inspect|buy>`')] });
@@ -119,7 +139,8 @@ module.exports = {
 
     if (sub === 'inspect') {
       const item = getStoreItem(interaction.options.getString('item'));
-      if (!item) return interaction.reply({ embeds: [embed.error('That store item does not exist.')], ephemeral: true });
+      if (!item)
+        return interaction.reply({ embeds: [embed.error('That store item does not exist.')], ephemeral: true });
       return interaction.reply({ embeds: [buildInspectEmbed(item)] });
     }
 
@@ -128,10 +149,17 @@ module.exports = {
         interaction.user.id,
         interaction.guild.id,
         interaction.options.getString('item'),
-        interaction.options.getInteger('quantity') || 1
+        interaction.options.getInteger('quantity') || 1,
       );
       if (result.error) return interaction.reply({ embeds: [embed.error(result.error)], ephemeral: true });
-      return interaction.reply({ embeds: [embed.success('Purchase Complete', `You bought **${result.item.name}** x${result.buyQuantity} for ${fmt(result.totalCost)}.\n\nNew balance: ${fmt(result.user.balance)}`)] });
+      return interaction.reply({
+        embeds: [
+          embed.success(
+            'Purchase Complete',
+            `You bought **${result.item.name}** x${result.buyQuantity} for ${fmt(result.totalCost)}.\n\nNew balance: ${fmt(result.user.balance)}`,
+          ),
+        ],
+      });
     }
   },
 };

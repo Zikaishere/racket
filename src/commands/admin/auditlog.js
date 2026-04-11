@@ -14,13 +14,23 @@ module.exports = {
     .setName('auditlog')
     .setDescription('View recent audit entries for this server')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addIntegerOption(option => option.setName('count').setDescription('How many entries to show').setRequired(false).setMinValue(1).setMaxValue(10)),
+    .addIntegerOption((option) =>
+      option
+        .setName('count')
+        .setDescription('How many entries to show')
+        .setRequired(false)
+        .setMinValue(1)
+        .setMaxValue(10),
+    ),
 
   async execute({ message, args }) {
     return message.reply({ embeds: [await buildAuditEmbed(message.guild.id, parseInt(args[0], 10) || 5)] });
   },
 
   async executeSlash({ interaction }) {
-    return interaction.reply({ embeds: [await buildAuditEmbed(interaction.guild.id, interaction.options.getInteger('count') || 5)], ephemeral: true });
+    return interaction.reply({
+      embeds: [await buildAuditEmbed(interaction.guild.id, interaction.options.getInteger('count') || 5)],
+      ephemeral: true,
+    });
   },
 };

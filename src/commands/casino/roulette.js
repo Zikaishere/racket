@@ -15,12 +15,12 @@ function getColor(number) {
 }
 
 const BET_TYPES = {
-  red: { check: number => getColor(number) === 'red', payout: 2, label: 'Red' },
-  black: { check: number => getColor(number) === 'black', payout: 2, label: 'Black' },
-  odd: { check: number => number !== 0 && number % 2 !== 0, payout: 2, label: 'Odd' },
-  even: { check: number => number !== 0 && number % 2 === 0, payout: 2, label: 'Even' },
-  low: { check: number => number >= 1 && number <= 18, payout: 2, label: 'Low (1-18)' },
-  high: { check: number => number >= 19 && number <= 36, payout: 2, label: 'High (19-36)' },
+  red: { check: (number) => getColor(number) === 'red', payout: 2, label: 'Red' },
+  black: { check: (number) => getColor(number) === 'black', payout: 2, label: 'Black' },
+  odd: { check: (number) => number !== 0 && number % 2 !== 0, payout: 2, label: 'Odd' },
+  even: { check: (number) => number !== 0 && number % 2 === 0, payout: 2, label: 'Even' },
+  low: { check: (number) => number >= 1 && number <= 18, payout: 2, label: 'Low (1-18)' },
+  high: { check: (number) => number >= 19 && number <= 36, payout: 2, label: 'High (19-36)' },
 };
 
 const resolveRoulette = async (client, guildId) => {
@@ -65,12 +65,13 @@ const resolveRoulette = async (client, guildId) => {
   await settleReservationsByGameKey(table.gameKey);
 
   if (biggestWinner && biggestWinner.payout >= 10000) {
-    CasinoManager.addHighlight(guildId, `**${biggestWinner.name}** won big on Roulette for **${biggestWinner.payout.toLocaleString()}** chips.`);
+    CasinoManager.addHighlight(
+      guildId,
+      `**${biggestWinner.name}** won big on Roulette for **${biggestWinner.payout.toLocaleString()}** chips.`,
+    );
   }
 
-  const resultEmbed = embed.raw(0x457B9D)
-    .setTitle('Roulette Results')
-    .setDescription(resultsText);
+  const resultEmbed = embed.raw(0x457b9d).setTitle('Roulette Results').setDescription(resultsText);
 
   const channel = client.channels.cache.get(table.channelId);
   if (channel) {
@@ -80,15 +81,22 @@ const resolveRoulette = async (client, guildId) => {
 
 const run = async ({ userId, guildId, username, channelId, client, bet, betType, reply }) => {
   const normalizedBetType = String(betType).toLowerCase();
-  const isNumber = !isNaN(normalizedBetType) && parseInt(normalizedBetType, 10) >= 0 && parseInt(normalizedBetType, 10) <= 36;
+  const isNumber =
+    !isNaN(normalizedBetType) && parseInt(normalizedBetType, 10) >= 0 && parseInt(normalizedBetType, 10) <= 36;
   const isType = BET_TYPES[normalizedBetType];
 
   if (!isNumber && !isType) {
-    return reply({ embeds: [embed.error('Invalid bet type. Use: red, black, odd, even, low, high, or a number 0-36.')], ephemeral: true });
+    return reply({
+      embeds: [embed.error('Invalid bet type. Use: red, black, odd, even, low, high, or a number 0-36.')],
+      ephemeral: true,
+    });
   }
 
   if (isNaN(bet) || bet < CASINO_MIN_BET || bet > CASINO_MAX_BET) {
-    return reply({ embeds: [embed.error(`Bet must be between ${fmt(CASINO_MIN_BET)} and ${fmt(CASINO_MAX_BET)}.`)], ephemeral: true });
+    return reply({
+      embeds: [embed.error(`Bet must be between ${fmt(CASINO_MIN_BET)} and ${fmt(CASINO_MAX_BET)}.`)],
+      ephemeral: true,
+    });
   }
 
   const user = await getUser(userId, guildId);
@@ -131,7 +139,14 @@ const run = async ({ userId, guildId, username, channelId, client, bet, betType,
   table.bets.push({ userId, username, bet, betType: normalizedBetType, isNumber, betLabel });
 
   const remaining = Math.max(1, Math.ceil((table.expires - Date.now()) / 1000));
-  return reply({ embeds: [embed.success('Bet Placed', `**${username}** placed **${bet.toLocaleString()}** chips on **${betLabel}**.\n\nThe wheel spins in ${remaining} seconds.`)] });
+  return reply({
+    embeds: [
+      embed.success(
+        'Bet Placed',
+        `**${username}** placed **${bet.toLocaleString()}** chips on **${betLabel}**.\n\nThe wheel spins in ${remaining} seconds.`,
+      ),
+    ],
+  });
 };
 
 module.exports = {
@@ -145,8 +160,17 @@ module.exports = {
   slash: new SlashCommandBuilder()
     .setName('roulette')
     .setDescription('Bet on the active roulette table')
-    .addIntegerOption(o => o.setName('bet').setDescription('Amount to bet').setRequired(true).setMinValue(CASINO_MIN_BET).setMaxValue(CASINO_MAX_BET))
-    .addStringOption(o => o.setName('type').setDescription('red, black, odd, even, low, high, or a number 0-36').setRequired(true)),
+    .addIntegerOption((o) =>
+      o
+        .setName('bet')
+        .setDescription('Amount to bet')
+        .setRequired(true)
+        .setMinValue(CASINO_MIN_BET)
+        .setMaxValue(CASINO_MAX_BET),
+    )
+    .addStringOption((o) =>
+      o.setName('type').setDescription('red, black, odd, even, low, high, or a number 0-36').setRequired(true),
+    ),
 
   async execute({ message, args, client }) {
     if (!args[0] || !args[1]) return message.reply({ embeds: [embed.error('Usage: `.roulette <bet> <type>`')] });
@@ -158,7 +182,7 @@ module.exports = {
       client,
       bet: parseInt(args[0], 10),
       betType: args[1],
-      reply: data => message.reply(data),
+      reply: (data) => message.reply(data),
     });
   },
 
@@ -171,7 +195,7 @@ module.exports = {
       client,
       bet: interaction.options.getInteger('bet'),
       betType: interaction.options.getString('type'),
-      reply: data => interaction.reply(data),
+      reply: (data) => interaction.reply(data),
     });
   },
 };

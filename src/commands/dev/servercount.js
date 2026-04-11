@@ -19,7 +19,7 @@ module.exports = {
       embeds: [
         embed.info(
           'Server Count',
-          `Current servers: **${guilds.length}**${preview ? `\n\n${preview}${guilds.length > 10 ? '\n...' : ''}` : ''}`
+          `Current servers: **${guilds.length}**${preview ? `\n\n${preview}${guilds.length > 10 ? '\n...' : ''}` : ''}`,
         ),
       ],
     });

@@ -34,7 +34,10 @@ function runCommandRegistryTests() {
     assert.ok(command.name, `missing command name in ${file}`);
     assert.ok(command.description, `missing description in ${file}`);
     assert.ok(command.category, `missing category in ${file}`);
-    assert.ok(command.execute || command.executeSlash || command.handleButton || command.handleJoin, `missing executable entry point in ${file}`);
+    assert.ok(
+      command.execute || command.executeSlash || command.handleButton || command.handleJoin,
+      `missing executable entry point in ${file}`,
+    );
 
     assert.ok(!names.has(command.name), `duplicate command name: ${command.name}`);
     names.add(command.name);

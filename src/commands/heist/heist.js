@@ -4,34 +4,97 @@ const { getUser, fmt } = require('../../utils/economy');
 const User = require('../../models/User');
 const Crew = require('../../models/Crew');
 const { reserveFunds, refundReservations, settleReservationsByGameKey } = require('../../utils/gameFunds');
-const { HEIST_MIN_PLAYERS, HEIST_JOIN_WINDOW, HEIST_MIN_BET, HEIST_MAX_BET, HEIST_BASE_COOLDOWN, WANTED_DURATION } = require('../../config');
+const {
+  HEIST_MIN_PLAYERS,
+  HEIST_JOIN_WINDOW,
+  HEIST_MIN_BET,
+  HEIST_MAX_BET,
+  HEIST_BASE_COOLDOWN,
+  WANTED_DURATION,
+} = require('../../config');
 
 const activeHeists = new Map();
 const HEIST_TARGETS = [
   { name: 'Corner Store', minCrew: 1, maxCrew: 3, baseReward: 500, successRate: 0.85, heat: 0 },
   { name: 'Bank Branch', minCrew: 2, maxCrew: 5, baseReward: 2000, successRate: 0.65, heat: 1 },
-  { name: 'Armored Car', minCrew: 2, maxCrew: 4, baseReward: 5000, successRate: 0.50, heat: 2 },
-  { name: 'Casino Vault', minCrew: 3, maxCrew: 6, baseReward: 10000, successRate: 0.40, heat: 2 },
+  { name: 'Armored Car', minCrew: 2, maxCrew: 4, baseReward: 5000, successRate: 0.5, heat: 2 },
+  { name: 'Casino Vault', minCrew: 3, maxCrew: 6, baseReward: 10000, successRate: 0.4, heat: 2 },
   { name: 'Federal Reserve', minCrew: 4, maxCrew: 8, baseReward: 25000, successRate: 0.25, heat: 3 },
 ];
 
 const STRATEGIES = {
-  quiet: { label: 'Quiet', successMod: 0.10, rewardMod: -0.15, heatMod: -1, failText: 'The crew stayed cautious, which kept the worst of the chaos down.' },
-  balanced: { label: 'Balanced', successMod: 0, rewardMod: 0, heatMod: 0, failText: 'The crew played it straight, but the job still went south.' },
-  aggressive: { label: 'Aggressive', successMod: -0.12, rewardMod: 0.25, heatMod: 1, failText: 'The aggressive push got loud fast, and the police hit back hard.' },
+  quiet: {
+    label: 'Quiet',
+    successMod: 0.1,
+    rewardMod: -0.15,
+    heatMod: -1,
+    failText: 'The crew stayed cautious, which kept the worst of the chaos down.',
+  },
+  balanced: {
+    label: 'Balanced',
+    successMod: 0,
+    rewardMod: 0,
+    heatMod: 0,
+    failText: 'The crew played it straight, but the job still went south.',
+  },
+  aggressive: {
+    label: 'Aggressive',
+    successMod: -0.12,
+    rewardMod: 0.25,
+    heatMod: 1,
+    failText: 'The aggressive push got loud fast, and the police hit back hard.',
+  },
 };
 
 const ENTRY_POINTS = [
-  { name: 'Front Entrance', successMod: -0.05, rewardMod: 0.10, heatMod: 1, reveal: 'Front Entrance was high-visibility. The score was bigger, but security reacted faster.' },
-  { name: 'Back Alley', successMod: 0.05, rewardMod: 0, heatMod: 0, reveal: 'Back Alley gave the crew cleaner access and fewer surprises.' },
-  { name: 'Roof Access', successMod: 0.02, rewardMod: 0.05, heatMod: -1, reveal: 'Roof Access kept some heat off the crew, but the route was slower and awkward.' },
+  {
+    name: 'Front Entrance',
+    successMod: -0.05,
+    rewardMod: 0.1,
+    heatMod: 1,
+    reveal: 'Front Entrance was high-visibility. The score was bigger, but security reacted faster.',
+  },
+  {
+    name: 'Back Alley',
+    successMod: 0.05,
+    rewardMod: 0,
+    heatMod: 0,
+    reveal: 'Back Alley gave the crew cleaner access and fewer surprises.',
+  },
+  {
+    name: 'Roof Access',
+    successMod: 0.02,
+    rewardMod: 0.05,
+    heatMod: -1,
+    reveal: 'Roof Access kept some heat off the crew, but the route was slower and awkward.',
+  },
 ];
 
 const HEAT_LEVELS = [
-  { name: 'Low Heat', cooldownMs: 0, seizureRate: 0, description: 'The crew lost the entry bet and slipped away before the city locked down.' },
-  { name: 'Medium Heat', cooldownMs: 30 * 60 * 1000, seizureRate: 0, description: 'The police flooded the area and everyone had to disappear for a while.' },
-  { name: 'High Heat', cooldownMs: 2 * 60 * 60 * 1000, seizureRate: 0.12, description: 'The city cracked down hard, and wallets got seized on top of the loss.' },
-  { name: 'Busted', cooldownMs: 6 * 60 * 60 * 1000, seizureRate: 0.25, description: 'The crew got properly caught. Long cooldowns and heavy seizures followed.' },
+  {
+    name: 'Low Heat',
+    cooldownMs: 0,
+    seizureRate: 0,
+    description: 'The crew lost the entry bet and slipped away before the city locked down.',
+  },
+  {
+    name: 'Medium Heat',
+    cooldownMs: 30 * 60 * 1000,
+    seizureRate: 0,
+    description: 'The police flooded the area and everyone had to disappear for a while.',
+  },
+  {
+    name: 'High Heat',
+    cooldownMs: 2 * 60 * 60 * 1000,
+    seizureRate: 0.12,
+    description: 'The city cracked down hard, and wallets got seized on top of the loss.',
+  },
+  {
+    name: 'Busted',
+    cooldownMs: 6 * 60 * 60 * 1000,
+    seizureRate: 0.25,
+    description: 'The crew got properly caught. Long cooldowns and heavy seizures followed.',
+  },
 ];
 
 const ROLE_POOL = [
@@ -65,7 +128,9 @@ function shuffle(array) {
 }
 
 function pickRole(existingCrew) {
-  const pool = ROLE_POOL.filter(role => role.name !== 'Inside Man' || ![...existingCrew.values()].some(member => member.role === 'Inside Man'));
+  const pool = ROLE_POOL.filter(
+    (role) => role.name !== 'Inside Man' || ![...existingCrew.values()].some((member) => member.role === 'Inside Man'),
+  );
   const totalWeight = pool.reduce((sum, role) => sum + role.weight, 0);
   let roll = Math.random() * totalWeight;
 
@@ -84,9 +149,21 @@ function getRemainingMs(targetDate) {
 
 function buildControls(heist, disabled = false) {
   const strategyRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('heist_strategy_quiet').setLabel('Quiet').setStyle(heist.strategy === 'quiet' ? ButtonStyle.Success : ButtonStyle.Secondary).setDisabled(disabled),
-    new ButtonBuilder().setCustomId('heist_strategy_balanced').setLabel('Balanced').setStyle(heist.strategy === 'balanced' ? ButtonStyle.Success : ButtonStyle.Secondary).setDisabled(disabled),
-    new ButtonBuilder().setCustomId('heist_strategy_aggressive').setLabel('Aggressive').setStyle(heist.strategy === 'aggressive' ? ButtonStyle.Success : ButtonStyle.Secondary).setDisabled(disabled)
+    new ButtonBuilder()
+      .setCustomId('heist_strategy_quiet')
+      .setLabel('Quiet')
+      .setStyle(heist.strategy === 'quiet' ? ButtonStyle.Success : ButtonStyle.Secondary)
+      .setDisabled(disabled),
+    new ButtonBuilder()
+      .setCustomId('heist_strategy_balanced')
+      .setLabel('Balanced')
+      .setStyle(heist.strategy === 'balanced' ? ButtonStyle.Success : ButtonStyle.Secondary)
+      .setDisabled(disabled),
+    new ButtonBuilder()
+      .setCustomId('heist_strategy_aggressive')
+      .setLabel('Aggressive')
+      .setStyle(heist.strategy === 'aggressive' ? ButtonStyle.Success : ButtonStyle.Secondary)
+      .setDisabled(disabled),
   );
 
   const entryRow = new ActionRowBuilder().addComponents(
@@ -95,14 +172,22 @@ function buildControls(heist, disabled = false) {
         .setCustomId(`heist_entry_${index}`)
         .setLabel(entry.name)
         .setStyle(heist.selectedEntryIndex === index ? ButtonStyle.Primary : ButtonStyle.Secondary)
-        .setDisabled(disabled)
-    )
+        .setDisabled(disabled),
+    ),
   );
 
   const actionRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('heist_join').setLabel('Join').setStyle(ButtonStyle.Success).setDisabled(disabled),
-    new ButtonBuilder().setCustomId('heist_scope').setLabel(heist.scoped ? 'Scoped' : 'Scope +15s').setStyle(ButtonStyle.Secondary).setDisabled(disabled || heist.scoped),
-    new ButtonBuilder().setCustomId('heist_launch').setLabel('Launch').setStyle(ButtonStyle.Danger).setDisabled(disabled)
+    new ButtonBuilder()
+      .setCustomId('heist_scope')
+      .setLabel(heist.scoped ? 'Scoped' : 'Scope +15s')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(disabled || heist.scoped),
+    new ButtonBuilder()
+      .setCustomId('heist_launch')
+      .setLabel('Launch')
+      .setStyle(ButtonStyle.Danger)
+      .setDisabled(disabled),
   );
 
   return [strategyRow, entryRow, actionRow];
@@ -119,9 +204,12 @@ function buildPlanningEmbed(heist) {
   const entry = heist.entryOptions[heist.selectedEntryIndex];
   const secondsLeft = Math.max(1, Math.ceil((heist.launchAt - Date.now()) / 1000));
 
-  return embed.raw(0xE63946)
+  return embed
+    .raw(0xe63946)
     .setTitle(`Heist Planning - ${heist.target.name}`)
-    .setDescription(`<@${heist.leaderId}> is planning a heist on the **${heist.target.name}**.\n\nLeader can change strategy, rotate the entry point, or scope the place out before launch.`)
+    .setDescription(
+      `<@${heist.leaderId}> is planning a heist on the **${heist.target.name}**.\n\nLeader can change strategy, rotate the entry point, or scope the place out before launch.`,
+    )
     .addFields(
       { name: 'Target', value: heist.target.name, inline: true },
       { name: 'Entry Bet', value: fmt(heist.bet), inline: true },
@@ -130,9 +218,13 @@ function buildPlanningEmbed(heist) {
       { name: 'Entry Point', value: entry.name, inline: true },
       { name: 'Launch In', value: `${secondsLeft}s`, inline: true },
       { name: 'Permanent Crew', value: heist.crewName || 'No registered crew', inline: true },
-      { name: 'Crew Roles', value: buildCrewList(heist), inline: false }
+      { name: 'Crew Roles', value: buildCrewList(heist), inline: false },
     )
-    .setFooter({ text: heist.scoped ? 'The crew scoped the target and earned a small success bonus.' : 'Scope adds 15 seconds and a small success bonus.' });
+    .setFooter({
+      text: heist.scoped
+        ? 'The crew scoped the target and earned a small success bonus.'
+        : 'Scope adds 15 seconds and a small success bonus.',
+    });
 }
 
 function appendHeistHistory(user, entry) {
@@ -146,13 +238,16 @@ async function editHeistMessage(heist, payload) {
 
 function scheduleLaunch(heist, client) {
   if (heist.timeout) clearTimeout(heist.timeout);
-  heist.timeout = setTimeout(() => {
-    resolveHeist(heist.guildId, client).catch(error => console.error('Heist resolution failed:', error));
-  }, Math.max(0, heist.launchAt - Date.now()));
+  heist.timeout = setTimeout(
+    () => {
+      resolveHeist(heist.guildId, client).catch((error) => console.error('Heist resolution failed:', error));
+    },
+    Math.max(0, heist.launchAt - Date.now()),
+  );
 }
 
 function getRoleBonuses(heist) {
-  const roles = [...heist.crew.values()].map(member => member.role);
+  const roles = [...heist.crew.values()].map((member) => member.role);
   const counts = roles.reduce((acc, role) => {
     acc[role] = (acc[role] || 0) + 1;
     return acc;
@@ -166,7 +261,7 @@ function getRoleBonuses(heist) {
   if (counts['Inside Man']) successBonus += 0.22;
 
   const permanentCrewMembers = heist.crewId
-    ? [...heist.crew.values()].filter(member => member.crewId === heist.crewId).length
+    ? [...heist.crew.values()].filter((member) => member.crewId === heist.crewId).length
     : 0;
   const crewSynergyBonus = Math.min(0.15, Math.max(0, permanentCrewMembers - 1) * 0.03);
   successBonus += crewSynergyBonus;
@@ -188,7 +283,11 @@ async function resolveHeist(guildId, client) {
 
   if (heist.crew.size < Math.max(HEIST_MIN_PLAYERS, heist.target.minCrew)) {
     await refundReservations({ gameKey: heist.gameKey });
-    const cancelEmbed = embed.warning('Heist Cancelled', `Not enough crew members joined. This target needs at least ${Math.max(HEIST_MIN_PLAYERS, heist.target.minCrew)} players.`)
+    const cancelEmbed = embed
+      .warning(
+        'Heist Cancelled',
+        `Not enough crew members joined. This target needs at least ${Math.max(HEIST_MIN_PLAYERS, heist.target.minCrew)} players.`,
+      )
       .addFields({ name: 'Crew', value: crewList || 'Nobody held their nerve.' });
     await editHeistMessage(heist, { embeds: [cancelEmbed], components: buildControls(heist, true) });
     return;
@@ -196,20 +295,23 @@ async function resolveHeist(guildId, client) {
 
   const roleBonuses = getRoleBonuses(heist);
   const successChance = clamp(
-    heist.target.successRate
-      + strategy.successMod
-      + entry.successMod
-      + roleBonuses.successBonus
-      + (heist.scoped ? 0.05 : 0),
+    heist.target.successRate +
+      strategy.successMod +
+      entry.successMod +
+      roleBonuses.successBonus +
+      (heist.scoped ? 0.05 : 0),
     0.05,
-    0.95
+    0.95,
   );
 
   const success = Math.random() < successChance;
 
   if (success) {
     const totalPot = heist.bet * heist.crew.size;
-    const totalReward = Math.max(heist.bet, Math.floor((totalPot + heist.target.baseReward) * (1 + strategy.rewardMod + entry.rewardMod)));
+    const totalReward = Math.max(
+      heist.bet,
+      Math.floor((totalPot + heist.target.baseReward) * (1 + strategy.rewardMod + entry.rewardMod)),
+    );
     const weights = crewEntries.reduce((sum, [, member]) => sum + (member.role === 'Mastermind' ? 1.35 : 1), 0);
     const outcome = SUCCESS_OUTCOMES[Math.floor(Math.random() * SUCCESS_OUTCOMES.length)];
 
@@ -221,7 +323,7 @@ async function resolveHeist(guildId, client) {
       user.balance += payout;
       user.stats.heistsJoined += 1;
       user.stats.heistsWon += 1;
-      user.heistCooldownUntil = new Date(now + BASE_HEIST_COOLDOWN);
+      user.heistCooldownUntil = new Date(now + HEIST_BASE_COOLDOWN);
       appendHeistHistory(user, {
         target: heist.target.name,
         outcome: 'success',
@@ -237,16 +339,27 @@ async function resolveHeist(guildId, client) {
 
     await settleReservationsByGameKey(heist.gameKey);
 
-    const successEmbed = embed.raw(0x2DC653)
+    const successEmbed = embed
+      .raw(0x2dc653)
       .setTitle(`Heist Success - ${heist.target.name}`)
-      .setDescription(`*"${outcome}"*\n\nStrategy: **${strategy.label}**\nEntry: **${entry.name}**\nRevealed Modifier: ${entry.reveal}`)
+      .setDescription(
+        `*"${outcome}"*\n\nStrategy: **${strategy.label}**\nEntry: **${entry.name}**\nRevealed Modifier: ${entry.reveal}`,
+      )
       .addFields(
         { name: 'Crew', value: crewList, inline: false },
         { name: 'Payouts', value: payoutLines.join('\n'), inline: false },
         { name: 'Final Success Rate', value: `${Math.round(successChance * 100)}%`, inline: true },
         { name: 'Scoped Bonus', value: heist.scoped ? 'Yes (+5%)' : 'No', inline: true },
-        { name: 'Role Synergy', value: `Hacker: ${roleBonuses.counts.Hacker || 0}, Driver: ${roleBonuses.counts.Driver || 0}, Lookout: ${roleBonuses.counts.Lookout || 0}`, inline: true },
-        { name: 'Crew Synergy', value: heist.crewName ? `${Math.round(roleBonuses.crewSynergyBonus * 100)}% from ${heist.crewName}` : 'None', inline: true }
+        {
+          name: 'Role Synergy',
+          value: `Hacker: ${roleBonuses.counts.Hacker || 0}, Driver: ${roleBonuses.counts.Driver || 0}, Lookout: ${roleBonuses.counts.Lookout || 0}`,
+          inline: true,
+        },
+        {
+          name: 'Crew Synergy',
+          value: heist.crewName ? `${Math.round(roleBonuses.crewSynergyBonus * 100)}% from ${heist.crewName}` : 'None',
+          inline: true,
+        },
       );
 
     await editHeistMessage(heist, { embeds: [successEmbed], components: buildControls(heist, true) });
@@ -267,7 +380,7 @@ async function resolveHeist(guildId, client) {
     let refund = 0;
     let seizure = 0;
     let extraLoss = 0;
-    let cooldownMs = Math.max(BASE_HEIST_COOLDOWN, heat.cooldownMs);
+    let cooldownMs = Math.max(HEIST_BASE_COOLDOWN, heat.cooldownMs);
     let wantedApplied = true;
     let heatLabel = heat.name;
 
@@ -319,40 +432,72 @@ async function resolveHeist(guildId, client) {
 
   await settleReservationsByGameKey(heist.gameKey);
 
-  const failEmbed = embed.raw(0xFF6B6B)
+  const failEmbed = embed
+    .raw(0xff6b6b)
     .setTitle(`Heist Failed - ${heist.target.name}`)
-    .setDescription(`*"${failOutcome}"*\n\n${strategy.failText}\nEntry: **${entry.name}**\nRevealed Modifier: ${entry.reveal}`)
+    .setDescription(
+      `*"${failOutcome}"*\n\n${strategy.failText}\nEntry: **${entry.name}**\nRevealed Modifier: ${entry.reveal}`,
+    )
     .addFields(
       { name: 'Crew', value: crewList, inline: false },
       { name: 'Police Response', value: `**${heat.name}** - ${heat.description}`, inline: false },
       { name: 'Penalties', value: penaltyLines.join('\n'), inline: false },
       { name: 'Final Success Rate', value: `${Math.round(successChance * 100)}%`, inline: true },
       { name: 'Scoped Bonus', value: heist.scoped ? 'Yes (+5%)' : 'No', inline: true },
-        { name: 'Role Synergy', value: `Lookout reduced heat: ${roleBonuses.counts.Lookout ? 'Yes' : 'No'}`, inline: true },
-        { name: 'Crew Synergy', value: heist.crewName ? `${Math.round(roleBonuses.crewSynergyBonus * 100)}% from ${heist.crewName}` : 'None', inline: true }
-      );
+      {
+        name: 'Role Synergy',
+        value: `Lookout reduced heat: ${roleBonuses.counts.Lookout ? 'Yes' : 'No'}`,
+        inline: true,
+      },
+      {
+        name: 'Crew Synergy',
+        value: heist.crewName ? `${Math.round(roleBonuses.crewSynergyBonus * 100)}% from ${heist.crewName}` : 'None',
+        inline: true,
+      },
+    );
 
   await editHeistMessage(heist, { embeds: [failEmbed], components: buildControls(heist, true) });
 }
 
 const run = async ({ userId, guildId, username, bet, reply, client }) => {
   if (activeHeists.has(guildId)) {
-    return reply({ embeds: [embed.warning('Heist In Progress', 'There is already a heist being planned in this server. Wait for it to finish.')], ephemeral: true });
+    return reply({
+      embeds: [
+        embed.warning(
+          'Heist In Progress',
+          'There is already a heist being planned in this server. Wait for it to finish.',
+        ),
+      ],
+      ephemeral: true,
+    });
   }
 
   if (isNaN(bet) || bet < HEIST_MIN_BET || bet > HEIST_MAX_BET) {
-    return reply({ embeds: [embed.error(`Bet must be between ${fmt(HEIST_MIN_BET)} and ${fmt(HEIST_MAX_BET)}.`)], ephemeral: true });
+    return reply({
+      embeds: [embed.error(`Bet must be between ${fmt(HEIST_MIN_BET)} and ${fmt(HEIST_MAX_BET)}.`)],
+      ephemeral: true,
+    });
   }
 
   const user = await getUser(userId, guildId);
   const permanentCrew = await Crew.findOne({ guildId, members: userId });
   const cooldownRemaining = getRemainingMs(user.heistCooldownUntil);
   if (cooldownRemaining > 0) {
-    return reply({ embeds: [embed.error(`You need to cool off before your next heist. Try again in ${Math.ceil(cooldownRemaining / 60000)} minutes.`)], ephemeral: true });
+    return reply({
+      embeds: [
+        embed.error(
+          `You need to cool off before your next heist. Try again in ${Math.ceil(cooldownRemaining / 60000)} minutes.`,
+        ),
+      ],
+      ephemeral: true,
+    });
   }
 
   if (user.balance < bet) {
-    return reply({ embeds: [embed.error(`You don't have enough raqs. Balance: ${fmt(user.balance)}`)], ephemeral: true });
+    return reply({
+      embeds: [embed.error(`You don't have enough raqs. Balance: ${fmt(user.balance)}`)],
+      ephemeral: true,
+    });
   }
 
   const target = HEIST_TARGETS[Math.min(Math.floor(bet / 2000), HEIST_TARGETS.length - 1)];
@@ -368,7 +513,10 @@ const run = async ({ userId, guildId, username, bet, reply, client }) => {
   });
 
   if (!reserved) {
-    return reply({ embeds: [embed.error(`You don't have enough raqs. Balance: ${fmt(user.balance)}`)], ephemeral: true });
+    return reply({
+      embeds: [embed.error(`You don't have enough raqs. Balance: ${fmt(user.balance)}`)],
+      ephemeral: true,
+    });
   }
 
   const heist = {
@@ -376,7 +524,18 @@ const run = async ({ userId, guildId, username, bet, reply, client }) => {
     guildId,
     target,
     bet,
-    crew: new Map([[userId, { bet, username, role: 'Mastermind', crewId: permanentCrew?._id?.toString() || null, crewName: permanentCrew?.name || null }]]),
+    crew: new Map([
+      [
+        userId,
+        {
+          bet,
+          username,
+          role: 'Mastermind',
+          crewId: permanentCrew?._id?.toString() || null,
+          crewName: permanentCrew?.name || null,
+        },
+      ],
+    ]),
     crewId: permanentCrew?._id?.toString() || null,
     crewName: permanentCrew?.name || null,
     startTime: Date.now(),
@@ -391,7 +550,11 @@ const run = async ({ userId, guildId, username, bet, reply, client }) => {
   };
 
   activeHeists.set(guildId, heist);
-  const message = await reply({ embeds: [buildPlanningEmbed(heist)], components: buildControls(heist, false), fetchReply: true });
+  const message = await reply({
+    embeds: [buildPlanningEmbed(heist)],
+    components: buildControls(heist, false),
+    fetchReply: true,
+  });
   heist.message = message;
   scheduleLaunch(heist, client);
 };
@@ -408,7 +571,14 @@ module.exports = {
   slash: new SlashCommandBuilder()
     .setName('heist')
     .setDescription('Plan a heist and invite others to join your crew')
-    .addIntegerOption(o => o.setName('bet').setDescription('Amount to bet').setRequired(true).setMinValue(HEIST_MIN_BET).setMaxValue(HEIST_MAX_BET)),
+    .addIntegerOption((o) =>
+      o
+        .setName('bet')
+        .setDescription('Amount to bet')
+        .setRequired(true)
+        .setMinValue(HEIST_MIN_BET)
+        .setMaxValue(HEIST_MAX_BET),
+    ),
 
   async execute({ message, args, client }) {
     return run({
@@ -416,7 +586,7 @@ module.exports = {
       guildId: message.guild.id,
       username: message.author.username,
       bet: parseInt(args[0], 10),
-      reply: data => message.reply(data),
+      reply: (data) => message.reply(data),
       client,
     });
   },
@@ -427,7 +597,7 @@ module.exports = {
       guildId: interaction.guild.id,
       username: interaction.user.username,
       bet: interaction.options.getInteger('bet'),
-      reply: data => interaction.reply({ ...data, fetchReply: true }),
+      reply: (data) => interaction.reply({ ...data, fetchReply: true }),
       client,
     });
   },
@@ -440,17 +610,32 @@ module.exports = {
     const userId = interaction.user.id;
 
     if (id === 'heist_join') {
-      if (heist.crew.has(userId)) return interaction.reply({ embeds: [embed.error('You are already in this heist.')], ephemeral: true });
-      if (heist.crew.size >= heist.target.maxCrew) return interaction.reply({ embeds: [embed.error(`This target only supports ${heist.target.maxCrew} crew members.`)], ephemeral: true });
+      if (heist.crew.has(userId))
+        return interaction.reply({ embeds: [embed.error('You are already in this heist.')], ephemeral: true });
+      if (heist.crew.size >= heist.target.maxCrew)
+        return interaction.reply({
+          embeds: [embed.error(`This target only supports ${heist.target.maxCrew} crew members.`)],
+          ephemeral: true,
+        });
 
       const user = await getUser(userId, interaction.guild.id);
       const permanentCrew = await Crew.findOne({ guildId: interaction.guild.id, members: userId });
       const cooldownRemaining = getRemainingMs(user.heistCooldownUntil);
       if (cooldownRemaining > 0) {
-        return interaction.reply({ embeds: [embed.error(`You need to cool off before your next heist. Try again in ${Math.ceil(cooldownRemaining / 60000)} minutes.`)], ephemeral: true });
+        return interaction.reply({
+          embeds: [
+            embed.error(
+              `You need to cool off before your next heist. Try again in ${Math.ceil(cooldownRemaining / 60000)} minutes.`,
+            ),
+          ],
+          ephemeral: true,
+        });
       }
       if (user.balance < heist.bet) {
-        return interaction.reply({ embeds: [embed.error(`You do not have enough raqs to join. Need: ${fmt(heist.bet)}`)], ephemeral: true });
+        return interaction.reply({
+          embeds: [embed.error(`You do not have enough raqs to join. Need: ${fmt(heist.bet)}`)],
+          ephemeral: true,
+        });
       }
 
       const reserved = await reserveFunds({
@@ -464,7 +649,10 @@ module.exports = {
       });
 
       if (!reserved) {
-        return interaction.reply({ embeds: [embed.error(`You do not have enough raqs to join. Need: ${fmt(heist.bet)}`)], ephemeral: true });
+        return interaction.reply({
+          embeds: [embed.error(`You do not have enough raqs to join. Need: ${fmt(heist.bet)}`)],
+          ephemeral: true,
+        });
       }
 
       heist.crew.set(userId, {
@@ -478,7 +666,10 @@ module.exports = {
     }
 
     if (userId !== heist.leaderId) {
-      return interaction.reply({ embeds: [embed.error('Only the heist leader can change the plan.')] , ephemeral: true });
+      return interaction.reply({
+        embeds: [embed.error('Only the heist leader can change the plan.')],
+        ephemeral: true,
+      });
     }
 
     if (id.startsWith('heist_strategy_')) {

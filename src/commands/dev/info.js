@@ -3,20 +3,35 @@ const embed = require('../../utils/embed');
 const { DEFAULT_PREFIX } = require('../../config');
 
 function buildInfoEmbed(prefix = DEFAULT_PREFIX) {
-  return embed.raw(0xA1CF3A)
+  return embed
+    .raw(0xa1cf3a)
     .setTitle('Racket | General Information')
-    .setDescription('Racket is a server economy bot with casino games, heists, black market trading, and admin tools for managing the experience.')
+    .setDescription(
+      'Racket is a server economy bot with casino games, heists, black market trading, and admin tools for managing the experience.',
+    )
     .addFields(
       { name: 'Start Here', value: `Use \`${prefix}help\` or \`/help\` to browse all commands.`, inline: false },
-      { name: 'Setup', value: `Admins can use \`${prefix}configstatus\`, \`${prefix}config\`, and \`${prefix}setuphere\` to configure the bot.`, inline: false },
-      { name: 'Features', value: 'Economy, casino, heists, black market, leaderboards, and configurable server settings.', inline: false },
-      { name: 'Support', value: 'Use the appropriate support channels for questions, bug reports, and suggestions.', inline: false },
+      {
+        name: 'Setup',
+        value: `Admins can use \`${prefix}configstatus\`, \`${prefix}config\`, and \`${prefix}setuphere\` to configure the bot.`,
+        inline: false,
+      },
+      {
+        name: 'Features',
+        value: 'Economy, casino, heists, black market, leaderboards, and configurable server settings.',
+        inline: false,
+      },
+      {
+        name: 'Support',
+        value: 'Use the appropriate support channels for questions, bug reports, and suggestions.',
+        inline: false,
+      },
     );
 }
 
 module.exports = {
   name: 'info',
-  aliases: ['about'],
+  aliases: [],
   description: 'Post the server info embed in the current channel.',
   usage: '',
   category: 'info',
@@ -35,6 +50,9 @@ module.exports = {
 
   async executeSlash({ interaction, guildData }) {
     await interaction.channel.send({ embeds: [buildInfoEmbed(guildData?.prefix || DEFAULT_PREFIX)] });
-    return interaction.reply({ embeds: [embed.success('Info Posted', `I posted the info embed in ${interaction.channel}.`)], ephemeral: true });
+    return interaction.reply({
+      embeds: [embed.success('Info Posted', `I posted the info embed in ${interaction.channel}.`)],
+      ephemeral: true,
+    });
   },
 };

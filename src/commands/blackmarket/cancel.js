@@ -5,7 +5,10 @@ const { logAudit } = require('../../utils/audit');
 
 const run = async ({ userId, guildId, listingId, reply }) => {
   if (!listingId) {
-    return reply({ embeds: [embed.error('Please provide a listing ID from `bm-mine` or `bm-browse`.')], ephemeral: true });
+    return reply({
+      embeds: [embed.error('Please provide a listing ID from `bm-mine` or `bm-browse`.')],
+      ephemeral: true,
+    });
   }
 
   const listings = await BlackMarket.find({
@@ -16,7 +19,7 @@ const run = async ({ userId, guildId, listingId, reply }) => {
     expiresAt: { $gt: new Date() },
   });
 
-  const listing = listings.find(entry => entry._id.toString().slice(-6).toLowerCase() === listingId.toLowerCase());
+  const listing = listings.find((entry) => entry._id.toString().slice(-6).toLowerCase() === listingId.toLowerCase());
   if (!listing) {
     return reply({ embeds: [embed.error('That active listing was not found under your account.')], ephemeral: true });
   }
@@ -36,7 +39,14 @@ const run = async ({ userId, guildId, listingId, reply }) => {
     },
   });
 
-  return reply({ embeds: [embed.success('Listing Cancelled', `Cancelled **${listing.itemName}** listing \`${listing._id.toString().slice(-6)}\``)] });
+  return reply({
+    embeds: [
+      embed.success(
+        'Listing Cancelled',
+        `Cancelled **${listing.itemName}** listing \`${listing._id.toString().slice(-6)}\``,
+      ),
+    ],
+  });
 };
 
 module.exports = {
@@ -50,13 +60,23 @@ module.exports = {
   slash: new SlashCommandBuilder()
     .setName('bm-cancel')
     .setDescription('Cancel one of your active black market listings')
-    .addStringOption(o => o.setName('id').setDescription('Listing ID').setRequired(true)),
+    .addStringOption((o) => o.setName('id').setDescription('Listing ID').setRequired(true)),
 
   async execute({ message, args }) {
-    return run({ userId: message.author.id, guildId: message.guild.id, listingId: args[0], reply: data => message.reply(data) });
+    return run({
+      userId: message.author.id,
+      guildId: message.guild.id,
+      listingId: args[0],
+      reply: (data) => message.reply(data),
+    });
   },
 
   async executeSlash({ interaction }) {
-    return run({ userId: interaction.user.id, guildId: interaction.guild.id, listingId: interaction.options.getString('id'), reply: data => interaction.reply(data) });
+    return run({
+      userId: interaction.user.id,
+      guildId: interaction.guild.id,
+      listingId: interaction.options.getString('id'),
+      reply: (data) => interaction.reply(data),
+    });
   },
 };

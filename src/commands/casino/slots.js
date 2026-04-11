@@ -27,12 +27,18 @@ const spin = () => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
 
 const run = async ({ userId, guildId, username, bet, reply, editReply }) => {
   if (isNaN(bet) || bet < CASINO_MIN_BET || bet > CASINO_MAX_BET) {
-    return reply({ embeds: [embed.error(`Bet must be between ${fmt(CASINO_MIN_BET)} and ${fmt(CASINO_MAX_BET)}.`)], ephemeral: true });
+    return reply({
+      embeds: [embed.error(`Bet must be between ${fmt(CASINO_MIN_BET)} and ${fmt(CASINO_MAX_BET)}.`)],
+      ephemeral: true,
+    });
   }
 
   const user = await getUser(userId, guildId);
   if (user.chips < bet) {
-    return reply({ embeds: [embed.error(`You don't have enough chips. Chips: **${user.chips.toLocaleString()}**`)], ephemeral: true });
+    return reply({
+      embeds: [embed.error(`You don't have enough chips. Chips: **${user.chips.toLocaleString()}**`)],
+      ephemeral: true,
+    });
   }
 
   const gameKey = `slots:${userId}:${Date.now()}`;
@@ -47,12 +53,16 @@ const run = async ({ userId, guildId, username, bet, reply, editReply }) => {
   });
 
   if (!reserved) {
-    return reply({ embeds: [embed.error(`You don't have enough chips. Chips: **${user.chips.toLocaleString()}**`)], ephemeral: true });
+    return reply({
+      embeds: [embed.error(`You don't have enough chips. Chips: **${user.chips.toLocaleString()}**`)],
+      ephemeral: true,
+    });
   }
 
   const reels = [spin(), spin(), spin()];
   const [a, b, c] = reels;
-  const machineEmbed = embed.raw(0x1B1B1B)
+  const machineEmbed = embed
+    .raw(0x1b1b1b)
     .setTitle('Slot Machine')
     .setDescription('[ ? | ? | ? ]\n\nSpinning...')
     .addFields({ name: 'Bet', value: fmt(bet), inline: true });
@@ -60,7 +70,7 @@ const run = async ({ userId, guildId, username, bet, reply, editReply }) => {
   const message = await reply({ embeds: [machineEmbed] });
   if (!message) return;
 
-  const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   await delay(1200);
   machineEmbed.setDescription(`[ ${a.icon} | ? | ? ]\n\nSpinning...`);
   await editReply(message, { embeds: [machineEmbed] });
@@ -93,14 +103,25 @@ const run = async ({ userId, guildId, username, bet, reply, editReply }) => {
   await finalUser.save();
   await settleReservation({ userId, guildId, gameKey, currency: 'chips' });
   await recordGame(userId, guildId, totalReturn > 0, bet);
-  await logAudit({ guildId, actorId: userId, targetId: userId, action: 'slots_spin', amount: netProfit, currency: 'chips', metadata: { bet, reels } });
+  await logAudit({
+    guildId,
+    actorId: userId,
+    targetId: userId,
+    action: 'slots_spin',
+    amount: netProfit,
+    currency: 'chips',
+    metadata: { bet, reels },
+  });
 
   if (netProfit >= bet * 5) {
-    CasinoManager.addHighlight(guildId, `**${username}** hit the slot jackpot and won **${netProfit.toLocaleString()}** chips.`);
+    CasinoManager.addHighlight(
+      guildId,
+      `**${username}** hit the slot jackpot and won **${netProfit.toLocaleString()}** chips.`,
+    );
   }
 
   machineEmbed
-    .setColor(totalReturn > 0 ? 0x2DC653 : 0xFF6B6B)
+    .setColor(totalReturn > 0 ? 0x2dc653 : 0xff6b6b)
     .setDescription(`[ ${a.icon} | ${b.icon} | ${c.icon} ]\n\n${resultText}`)
     .addFields({ name: 'New Chips', value: `**${finalUser.chips.toLocaleString()}**`, inline: true });
 
@@ -118,7 +139,14 @@ module.exports = {
   slash: new SlashCommandBuilder()
     .setName('slots')
     .setDescription('Spin the slot machine')
-    .addIntegerOption(o => o.setName('bet').setDescription('Amount to bet').setRequired(true).setMinValue(CASINO_MIN_BET).setMaxValue(CASINO_MAX_BET)),
+    .addIntegerOption((o) =>
+      o
+        .setName('bet')
+        .setDescription('Amount to bet')
+        .setRequired(true)
+        .setMinValue(CASINO_MIN_BET)
+        .setMaxValue(CASINO_MAX_BET),
+    ),
 
   async execute({ message, args }) {
     return run({
@@ -126,7 +154,7 @@ module.exports = {
       guildId: message.guild.id,
       username: message.author.username,
       bet: parseInt(args[0], 10),
-      reply: async data => message.reply(data),
+      reply: async (data) => message.reply(data),
       editReply: async (_message, data) => _message.edit(data),
     });
   },
@@ -137,7 +165,7 @@ module.exports = {
       guildId: interaction.guild.id,
       username: interaction.user.username,
       bet: interaction.options.getInteger('bet'),
-      reply: async data => interaction.reply({ ...data, fetchReply: true }),
+      reply: async (data) => interaction.reply({ ...data, fetchReply: true }),
       editReply: async (_message, data) => interaction.editReply(data),
     });
   },

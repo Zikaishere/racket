@@ -5,9 +5,9 @@ const { Collection, REST, Routes } = require('discord.js');
 class CommandHandler {
   constructor(client) {
     this.client = client;
-    client.commands = client.commands || new Collection();   // slash + prefix
-    client.aliases  = client.aliases || new Collection();   // prefix aliases
-    client.categories = client.categories || new Map();        // category -> command names
+    client.commands = client.commands || new Collection(); // slash + prefix
+    client.aliases = client.aliases || new Collection(); // prefix aliases
+    client.categories = client.categories || new Map(); // category -> command names
   }
 
   load() {
@@ -18,7 +18,7 @@ class CommandHandler {
       const categoryPath = path.join(commandsPath, category);
       if (!fs.statSync(categoryPath).isDirectory()) continue;
 
-      const files = fs.readdirSync(categoryPath).filter(f => f.endsWith('.js'));
+      const files = fs.readdirSync(categoryPath).filter((f) => f.endsWith('.js'));
       const categoryCommands = [];
 
       for (const file of files) {

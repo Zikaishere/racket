@@ -29,7 +29,7 @@ function cardValue(rank) {
 
 function handValue(hand) {
   let total = hand.reduce((sum, card) => sum + cardValue(card.rank), 0);
-  let aces = hand.filter(card => card.rank === 'A').length;
+  let aces = hand.filter((card) => card.rank === 'A').length;
 
   while (total > 21 && aces > 0) {
     total -= 10;
@@ -49,30 +49,42 @@ function maybeAddHouseBot(table) {
   }
 }
 
-const renderLobby = (table) => embed.raw(0x457B9D)
-  .setTitle(`Blackjack Table [${table.tableId}]`)
-  .setDescription(`**${table.players[0].username}** opened a Blackjack table.\n\nBet: ${table.bet.toLocaleString()} chips\nPlayers (${table.players.length}/5):\n${table.players.map(player => `- ${player.username}`).join('\n')}`)
-  .setFooter({ text: 'Other players can join, or the host can start early. If nobody joins, the House Bot will sit in.' });
+const renderLobby = (table) =>
+  embed
+    .raw(0x457b9d)
+    .setTitle(`Blackjack Table [${table.tableId}]`)
+    .setDescription(
+      `**${table.players[0].username}** opened a Blackjack table.\n\nBet: ${table.bet.toLocaleString()} chips\nPlayers (${table.players.length}/5):\n${table.players.map((player) => `- ${player.username}`).join('\n')}`,
+    )
+    .setFooter({
+      text: 'Other players can join, or the host can start early. If nobody joins, the House Bot will sit in.',
+    });
 
-const buildLobbyButtons = (tableId) => new ActionRowBuilder().addComponents(
-  new ButtonBuilder().setCustomId(`bj_join_${tableId}`).setLabel('Join Table').setStyle(ButtonStyle.Success),
-  new ButtonBuilder().setCustomId(`bj_leave_${tableId}`).setLabel('Leave').setStyle(ButtonStyle.Danger),
-  new ButtonBuilder().setCustomId(`bj_start_${tableId}`).setLabel('Start Now').setStyle(ButtonStyle.Primary)
-);
+const buildLobbyButtons = (tableId) =>
+  new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`bj_join_${tableId}`).setLabel('Join Table').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId(`bj_leave_${tableId}`).setLabel('Leave').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId(`bj_start_${tableId}`).setLabel('Start Now').setStyle(ButtonStyle.Primary),
+  );
 
-const buildTurnButtons = (tableId) => new ActionRowBuilder().addComponents(
-  new ButtonBuilder().setCustomId(`bj_hit_${tableId}`).setLabel('Hit').setStyle(ButtonStyle.Primary),
-  new ButtonBuilder().setCustomId(`bj_stand_${tableId}`).setLabel('Stand').setStyle(ButtonStyle.Secondary)
-);
+const buildTurnButtons = (tableId) =>
+  new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`bj_hit_${tableId}`).setLabel('Hit').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId(`bj_stand_${tableId}`).setLabel('Stand').setStyle(ButtonStyle.Secondary),
+  );
 
 const renderTable = (table, hideDealer = true) => {
-  const tableEmbed = embed.raw(0x457B9D).setTitle(`Blackjack Table [${table.tableId}]`);
+  const tableEmbed = embed.raw(0x457b9d).setTitle(`Blackjack Table [${table.tableId}]`);
 
   if (table.status === 'done') {
-    tableEmbed.setDescription('Game Over').setColor(0x2DC653);
-    tableEmbed.addFields({ name: `Dealer (${handValue(table.dealerHand)})`, value: formatHand(table.dealerHand), inline: false });
+    tableEmbed.setDescription('Game Over').setColor(0x2dc653);
+    tableEmbed.addFields({
+      name: `Dealer (${handValue(table.dealerHand)})`,
+      value: formatHand(table.dealerHand),
+      inline: false,
+    });
   } else {
-    tableEmbed.setDescription(`Bet: ${table.bet.toLocaleString()} chips`).setColor(0xFFB703);
+    tableEmbed.setDescription(`Bet: ${table.bet.toLocaleString()} chips`).setColor(0xffb703);
     tableEmbed.addFields({ name: 'Dealer', value: formatHand(table.dealerHand, hideDealer), inline: false });
   }
 
@@ -97,7 +109,9 @@ const renderTable = (table, hideDealer = true) => {
 const sendTurnPrompt = async (interaction, table) => {
   const player = table.players[table.currentPlayerIndex];
   const tableEmbed = renderTable(table);
-  const turnText = player.isBot ? `${player.username} is taking a turn.` : `<@${player.id}>, it is your turn. Hit or Stand?`;
+  const turnText = player.isBot
+    ? `${player.username} is taking a turn.`
+    : `<@${player.id}>, it is your turn. Hit or Stand?`;
   tableEmbed.addFields({ name: 'Turn', value: turnText });
   await interaction.update({ embeds: [tableEmbed], components: [player.isBot ? [] : buildTurnButtons(table.tableId)] });
 };
@@ -191,12 +205,18 @@ const nextTurn = async (interaction, table) => {
 
 const run = async ({ userId, guildId, username, bet, reply }) => {
   if (isNaN(bet) || bet < CASINO_MIN_BET || bet > CASINO_MAX_BET) {
-    return reply({ embeds: [embed.error(`Bet must be between ${fmt(CASINO_MIN_BET)} and ${fmt(CASINO_MAX_BET)}.`)], ephemeral: true });
+    return reply({
+      embeds: [embed.error(`Bet must be between ${fmt(CASINO_MIN_BET)} and ${fmt(CASINO_MAX_BET)}.`)],
+      ephemeral: true,
+    });
   }
 
   const user = await getUser(userId, guildId);
   if (user.chips < bet) {
-    return reply({ embeds: [embed.error(`You do not have enough chips. Chips: ${user.chips.toLocaleString()}`)], ephemeral: true });
+    return reply({
+      embeds: [embed.error(`You do not have enough chips. Chips: ${user.chips.toLocaleString()}`)],
+      ephemeral: true,
+    });
   }
 
   const tableId = CasinoManager.createTableId();
@@ -212,7 +232,10 @@ const run = async ({ userId, guildId, username, bet, reply }) => {
   });
 
   if (!reserved) {
-    return reply({ embeds: [embed.error(`You do not have enough chips. Chips: ${user.chips.toLocaleString()}`)], ephemeral: true });
+    return reply({
+      embeds: [embed.error(`You do not have enough chips. Chips: ${user.chips.toLocaleString()}`)],
+      ephemeral: true,
+    });
   }
 
   const table = {
@@ -245,13 +268,19 @@ const handleButton = async (interaction) => {
   const username = interaction.user.username;
 
   if (action === 'join') {
-    if (table.status !== 'lobby') return interaction.reply({ embeds: [embed.error('Game already started.')], ephemeral: true });
-    if (table.players.some(player => player.id === userId)) return interaction.reply({ embeds: [embed.error('You are already at this table.')], ephemeral: true });
-    if (table.players.length >= 5) return interaction.reply({ embeds: [embed.error('Table is full.')], ephemeral: true });
+    if (table.status !== 'lobby')
+      return interaction.reply({ embeds: [embed.error('Game already started.')], ephemeral: true });
+    if (table.players.some((player) => player.id === userId))
+      return interaction.reply({ embeds: [embed.error('You are already at this table.')], ephemeral: true });
+    if (table.players.length >= 5)
+      return interaction.reply({ embeds: [embed.error('Table is full.')], ephemeral: true });
 
     const user = await getUser(userId, table.guildId);
     if (user.chips < table.bet) {
-      return interaction.reply({ embeds: [embed.error(`You need ${table.bet.toLocaleString()} chips to join.`)], ephemeral: true });
+      return interaction.reply({
+        embeds: [embed.error(`You need ${table.bet.toLocaleString()} chips to join.`)],
+        ephemeral: true,
+      });
     }
 
     const reserved = await reserveFunds({
@@ -265,7 +294,10 @@ const handleButton = async (interaction) => {
     });
 
     if (!reserved) {
-      return interaction.reply({ embeds: [embed.error(`You need ${table.bet.toLocaleString()} chips to join.`)], ephemeral: true });
+      return interaction.reply({
+        embeds: [embed.error(`You need ${table.bet.toLocaleString()} chips to join.`)],
+        ephemeral: true,
+      });
     }
 
     table.players.push({ id: userId, username, hand: [], state: 'waiting' });
@@ -273,16 +305,24 @@ const handleButton = async (interaction) => {
   }
 
   if (action === 'leave') {
-    if (table.status !== 'lobby') return interaction.reply({ embeds: [embed.error('You cannot leave while the game is running.')], ephemeral: true });
-    const playerIndex = table.players.findIndex(player => player.id === userId);
-    if (playerIndex === -1) return interaction.reply({ embeds: [embed.error('You are not at this table.')], ephemeral: true });
+    if (table.status !== 'lobby')
+      return interaction.reply({
+        embeds: [embed.error('You cannot leave while the game is running.')],
+        ephemeral: true,
+      });
+    const playerIndex = table.players.findIndex((player) => player.id === userId);
+    if (playerIndex === -1)
+      return interaction.reply({ embeds: [embed.error('You are not at this table.')], ephemeral: true });
 
     await refundReservation({ userId, guildId: table.guildId, gameKey: table.gameKey, currency: 'chips' });
     table.players.splice(playerIndex, 1);
 
     if (table.players.length === 0) {
       CasinoManager.deleteTable(table.guildId, tableId);
-      return interaction.update({ embeds: [embed.info('Table Closed', 'The table closed and the reserved bet was refunded.')], components: [] });
+      return interaction.update({
+        embeds: [embed.info('Table Closed', 'The table closed and the reserved bet was refunded.')],
+        components: [],
+      });
     }
 
     if (userId === table.hostId) {
@@ -293,8 +333,10 @@ const handleButton = async (interaction) => {
   }
 
   if (action === 'start') {
-    if (userId !== table.hostId) return interaction.reply({ embeds: [embed.error('Only the host can start the game.')], ephemeral: true });
-    if (table.status !== 'lobby') return interaction.reply({ embeds: [embed.error('Game already started.')], ephemeral: true });
+    if (userId !== table.hostId)
+      return interaction.reply({ embeds: [embed.error('Only the host can start the game.')], ephemeral: true });
+    if (table.status !== 'lobby')
+      return interaction.reply({ embeds: [embed.error('Game already started.')], ephemeral: true });
 
     maybeAddHouseBot(table);
     table.status = 'playing';
@@ -305,7 +347,10 @@ const handleButton = async (interaction) => {
       player.state = handValue(player.hand) === 21 ? 'blackjack' : 'playing';
     }
 
-    while (table.currentPlayerIndex < table.players.length && table.players[table.currentPlayerIndex].state !== 'playing') {
+    while (
+      table.currentPlayerIndex < table.players.length &&
+      table.players[table.currentPlayerIndex].state !== 'playing'
+    ) {
       table.currentPlayerIndex += 1;
     }
 
@@ -352,16 +397,35 @@ module.exports = {
   slash: new SlashCommandBuilder()
     .setName('blackjack')
     .setDescription('Create a multiplayer Blackjack table')
-    .addIntegerOption(o => o.setName('bet').setDescription('Amount to bet').setRequired(true).setMinValue(CASINO_MIN_BET).setMaxValue(CASINO_MAX_BET)),
+    .addIntegerOption((o) =>
+      o
+        .setName('bet')
+        .setDescription('Amount to bet')
+        .setRequired(true)
+        .setMinValue(CASINO_MIN_BET)
+        .setMaxValue(CASINO_MAX_BET),
+    ),
 
   async execute({ message, args }) {
     if (args[0] && args[0].toLowerCase() === 'create') args.shift();
     if (!args[0]) return message.reply({ embeds: [embed.error('Usage: `.blackjack create <bet>`')] });
-    return run({ userId: message.author.id, guildId: message.guild.id, username: message.author.username, bet: parseInt(args[0], 10), reply: data => message.reply(data) });
+    return run({
+      userId: message.author.id,
+      guildId: message.guild.id,
+      username: message.author.username,
+      bet: parseInt(args[0], 10),
+      reply: (data) => message.reply(data),
+    });
   },
 
   async executeSlash({ interaction }) {
-    return run({ userId: interaction.user.id, guildId: interaction.guild.id, username: interaction.user.username, bet: interaction.options.getInteger('bet'), reply: data => interaction.reply(data) });
+    return run({
+      userId: interaction.user.id,
+      guildId: interaction.guild.id,
+      username: interaction.user.username,
+      bet: interaction.options.getInteger('bet'),
+      reply: (data) => interaction.reply(data),
+    });
   },
 
   handleButton,

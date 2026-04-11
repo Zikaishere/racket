@@ -31,19 +31,19 @@ module.exports = {
           'moderation.globalBanReason': null,
           'moderation.globalBannedAt': null,
           'moderation.globalBannedBy': null,
-        }
-      }
+        },
+      },
     );
 
     await logAudit({
       actorId: message.author.id,
       targetId,
       action: 'dev_global_unban',
-      metadata: { affectedRecords: result.modifiedCount }
+      metadata: { affectedRecords: result.modifiedCount },
     });
 
     return message.reply({
-      embeds: [embed.success('Global Ban Removed', `<@${targetId}> can use economy and game commands again.`)]
+      embeds: [embed.success('Global Ban Removed', `<@${targetId}> can use economy and game commands again.`)],
     });
-  }
+  },
 };

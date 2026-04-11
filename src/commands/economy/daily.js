@@ -12,16 +12,13 @@ const run = async ({ userId, guildId, reply }) => {
     {
       userId,
       guildId,
-      $or: [
-        { lastDaily: null },
-        { lastDaily: { $lte: new Date(Date.now() - DAILY_COOLDOWN) } },
-      ],
+      $or: [{ lastDaily: null }, { lastDaily: { $lte: new Date(Date.now() - DAILY_COOLDOWN) } }],
     },
     {
       $set: { lastDaily: new Date() },
       $inc: { balance: DAILY_AMOUNT, totalEarned: DAILY_AMOUNT },
     },
-    { new: true }
+    { new: true },
   );
 
   if (!updated) {
@@ -30,11 +27,30 @@ const run = async ({ userId, guildId, reply }) => {
     const remaining = DAILY_COOLDOWN - (Date.now() - last);
     const hours = Math.ceil(remaining / 3600000);
     const mins = Math.ceil((remaining % 3600000) / 60000);
-    return reply({ embeds: [embed.warning('Daily Already Claimed', `You already claimed your daily. Come back in **${hours}h ${mins}m**.`)], ephemeral: true });
+    return reply({
+      embeds: [
+        embed.warning('Daily Already Claimed', `You already claimed your daily. Come back in **${hours}h ${mins}m**.`),
+      ],
+      ephemeral: true,
+    });
   }
 
-  await logAudit({ guildId, actorId: userId, targetId: userId, action: 'daily_claim', amount: DAILY_AMOUNT, currency: 'wallet' });
-  return reply({ embeds: [embed.success('Daily Reward', `You claimed your daily reward of ${fmt(DAILY_AMOUNT)}.\n\nNew balance: ${fmt(updated.balance)}`)] });
+  await logAudit({
+    guildId,
+    actorId: userId,
+    targetId: userId,
+    action: 'daily_claim',
+    amount: DAILY_AMOUNT,
+    currency: 'wallet',
+  });
+  return reply({
+    embeds: [
+      embed.success(
+        'Daily Reward',
+        `You claimed your daily reward of ${fmt(DAILY_AMOUNT)}.\n\nNew balance: ${fmt(updated.balance)}`,
+      ),
+    ],
+  });
 };
 
 module.exports = {
@@ -48,10 +64,14 @@ module.exports = {
   slash: new SlashCommandBuilder().setName('daily').setDescription('Claim your daily reward'),
 
   async execute({ message }) {
-    return run({ userId: message.author.id, guildId: message.guild.id, reply: data => message.reply(data) });
+    return run({ userId: message.author.id, guildId: message.guild.id, reply: (data) => message.reply(data) });
   },
 
   async executeSlash({ interaction }) {
-    return run({ userId: interaction.user.id, guildId: interaction.guild.id, reply: data => interaction.reply(data) });
+    return run({
+      userId: interaction.user.id,
+      guildId: interaction.guild.id,
+      reply: (data) => interaction.reply(data),
+    });
   },
 };

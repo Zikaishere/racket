@@ -15,8 +15,10 @@ module.exports = {
     .setName('freeze')
     .setDescription('Freeze a user from economy and game usage')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addUserOption(option => option.setName('user').setDescription('User').setRequired(true))
-    .addStringOption(option => option.setName('reason').setDescription('Why the user is being frozen').setRequired(false)),
+    .addUserOption((option) => option.setName('user').setDescription('User').setRequired(true))
+    .addStringOption((option) =>
+      option.setName('reason').setDescription('Why the user is being frozen').setRequired(false),
+    ),
 
   async execute({ message, args }) {
     const target = parseMentionTarget(message);
@@ -28,6 +30,16 @@ module.exports = {
   },
 
   async executeSlash({ interaction }) {
-    return interaction.reply({ embeds: [await handleFreeze(interaction.guild.id, interaction.user.id, interaction.options.getUser('user'), interaction.options.getString('reason'))], ephemeral: true });
+    return interaction.reply({
+      embeds: [
+        await handleFreeze(
+          interaction.guild.id,
+          interaction.user.id,
+          interaction.options.getUser('user'),
+          interaction.options.getString('reason'),
+        ),
+      ],
+      ephemeral: true,
+    });
   },
 };

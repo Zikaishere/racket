@@ -20,20 +20,17 @@ function getValue(user, type) {
 const run = async ({ guildId, type, reply }) => {
   const typeKey = TYPES[type] ? type : 'balance';
   const typeData = TYPES[typeKey];
-  const users = await User.find({ guildId }).sort({ [typeData.field]: -1 }).limit(10);
+  const users = await User.find({ guildId })
+    .sort({ [typeData.field]: -1 })
+    .limit(10);
 
   if (!users.length) {
     return reply({ embeds: [embed.info('Leaderboard', 'No data yet!')], ephemeral: true });
   }
 
   const lines = users.map((user, index) => {
-    const medal = index === 0
-      ? '\uD83E\uDD47'
-      : index === 1
-        ? '\uD83E\uDD48'
-        : index === 2
-          ? '\uD83E\uDD49'
-          : `**${index + 1}.**`;
+    const medal =
+      index === 0 ? '\uD83E\uDD47' : index === 1 ? '\uD83E\uDD48' : index === 2 ? '\uD83E\uDD49' : `**${index + 1}.**`;
     return `${medal} <@${user.userId}> - ${getValue(user, typeKey)}`;
   });
 
@@ -53,12 +50,18 @@ module.exports = {
   slash: new SlashCommandBuilder()
     .setName('leaderboard')
     .setDescription('View the server leaderboard')
-    .addStringOption(option => option.setName('type').setDescription('Optional leaderboard type').setRequired(false).addChoices(
-      { name: 'Balance', value: 'balance' },
-      { name: 'All-Time Earned', value: 'earned' },
-      { name: 'Total Wagered', value: 'wagered' },
-      { name: 'Heists Won', value: 'heists' }
-    )),
+    .addStringOption((option) =>
+      option
+        .setName('type')
+        .setDescription('Optional leaderboard type')
+        .setRequired(false)
+        .addChoices(
+          { name: 'Balance', value: 'balance' },
+          { name: 'All-Time Earned', value: 'earned' },
+          { name: 'Total Wagered', value: 'wagered' },
+          { name: 'Heists Won', value: 'heists' },
+        ),
+    ),
 
   async execute({ message, args }) {
     const type = args[0]?.toLowerCase() || 'balance';
@@ -69,6 +72,10 @@ module.exports = {
   },
 
   async executeSlash({ interaction }) {
-    return run({ guildId: interaction.guild.id, type: interaction.options.getString('type') || 'balance', reply: (data) => interaction.reply(data) });
+    return run({
+      guildId: interaction.guild.id,
+      type: interaction.options.getString('type') || 'balance',
+      reply: (data) => interaction.reply(data),
+    });
   },
 };

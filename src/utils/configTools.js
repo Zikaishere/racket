@@ -43,7 +43,8 @@ function resolveCommand(client, name) {
 function canToggleCommand(command) {
   if (!command) return { ok: false, reason: 'That command was not found.' };
   if (command.devOnly) return { ok: false, reason: 'Dev-only commands cannot be configured by server admins.' };
-  if (PROTECTED_COMMANDS.has(command.name)) return { ok: false, reason: `The \`${command.name}\` command cannot be disabled.` };
+  if (PROTECTED_COMMANDS.has(command.name))
+    return { ok: false, reason: `The \`${command.name}\` command cannot be disabled.` };
   return { ok: true };
 }
 
@@ -61,7 +62,8 @@ function buildStatusEmbed(guildData) {
     guildData.features?.blackmarket === false ? null : 'blackmarket',
   ].filter(Boolean);
 
-  return embed.raw(0x2b2d31)
+  return embed
+    .raw(0x2b2d31)
     .setTitle('Server Config')
     .setDescription('Setup and configuration are now split into dedicated commands for quicker server setup.')
     .addFields(
@@ -71,9 +73,21 @@ function buildStatusEmbed(guildData) {
       { name: 'Black Market', value: guildData.features?.blackmarket === false ? 'Off' : 'On', inline: true },
       { name: 'Enabled Feature Count', value: `${enabledFeatures.length}/3`, inline: true },
       { name: 'Disabled Command Count', value: `${disabledCommands.length}`, inline: true },
-      { name: 'Admin Roles', value: adminRoles.length ? adminRoles.join(', ') : 'Discord Administrators only', inline: false },
-      { name: 'Disabled Commands', value: disabledCommands.length ? disabledCommands.map((name) => `\`${name}\``).join(', ') : 'None', inline: false },
-      { name: 'Quick Setup', value: `\`${prefix}configsetup\`\n\`${prefix}setprefix <newPrefix>\`\n\`${prefix}adminrole add @Role\`\n\`${prefix}configcommands\``, inline: false },
+      {
+        name: 'Admin Roles',
+        value: adminRoles.length ? adminRoles.join(', ') : 'Discord Administrators only',
+        inline: false,
+      },
+      {
+        name: 'Disabled Commands',
+        value: disabledCommands.length ? disabledCommands.map((name) => `\`${name}\``).join(', ') : 'None',
+        inline: false,
+      },
+      {
+        name: 'Quick Setup',
+        value: `\`${prefix}configsetup\`\n\`${prefix}setprefix <newPrefix>\`\n\`${prefix}adminrole add @Role\`\n\`${prefix}configcommands\``,
+        inline: false,
+      },
     );
 }
 
@@ -81,7 +95,7 @@ function buildCommandsEmbed(client, guildData, category = 'all') {
   const disabled = new Set(guildData.disabledCommands || []);
   const commands = [...client.commands.values()]
     .filter((command) => !command.devOnly)
-    .filter((command) => category === 'all' ? true : command.category === category)
+    .filter((command) => (category === 'all' ? true : command.category === category))
     .sort((a, b) => {
       if (a.category !== b.category) return a.category.localeCompare(b.category);
       return a.name.localeCompare(b.name);
@@ -93,7 +107,8 @@ function buildCommandsEmbed(client, guildData, category = 'all') {
     return `\`${command.name}\` - ${state} (${command.category})`;
   });
 
-  return embed.raw(0x2b2d31)
+  return embed
+    .raw(0x2b2d31)
     .setTitle(category === 'all' ? 'Configurable Commands' : `Configurable Commands: ${category}`)
     .setDescription(lines.join('\n') || 'No commands found for that category.')
     .setFooter({ text: `Total shown: ${commands.length}` });
@@ -110,7 +125,7 @@ async function setPrefix(guildId, actorId, prefix) {
   await Guild.findOneAndUpdate(
     { guildId },
     { $set: { prefix }, $setOnInsert: { guildId } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, new: true, setDefaultsOnInsert: true },
   );
   await logAudit({ guildId, actorId, action: 'config_set_prefix', metadata: { prefix } });
   return embed.success('Config Updated', `Prefix is now \`${prefix}\`.`);
@@ -120,10 +135,13 @@ async function setFeature(guildId, actorId, featureName, enabled) {
   await Guild.findOneAndUpdate(
     { guildId },
     { $set: { [`features.${featureName}`]: enabled }, $setOnInsert: { guildId } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, new: true, setDefaultsOnInsert: true },
   );
   await logAudit({ guildId, actorId, action: 'config_set_feature', metadata: { featureName, enabled } });
-  return embed.success('Config Updated', `The **${featureName}** feature is now **${enabled ? 'enabled' : 'disabled'}**.`);
+  return embed.success(
+    'Config Updated',
+    `The **${featureName}** feature is now **${enabled ? 'enabled' : 'disabled'}**.`,
+  );
 }
 
 async function setCommandState(guildId, actorId, client, commandName, enabled) {
@@ -135,27 +153,26 @@ async function setCommandState(guildId, actorId, client, commandName, enabled) {
     ? { $pull: { disabledCommands: command.name }, $setOnInsert: { guildId } }
     : { $addToSet: { disabledCommands: command.name }, $setOnInsert: { guildId } };
 
-  await Guild.findOneAndUpdate(
-    { guildId },
-    update,
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
+  await Guild.findOneAndUpdate({ guildId }, update, { upsert: true, new: true, setDefaultsOnInsert: true });
   await logAudit({ guildId, actorId, action: 'config_set_command', metadata: { command: command.name, enabled } });
-  return embed.success('Config Updated', `The \`${command.name}\` command is now **${enabled ? 'enabled' : 'disabled'}**.`);
+  return embed.success(
+    'Config Updated',
+    `The \`${command.name}\` command is now **${enabled ? 'enabled' : 'disabled'}**.`,
+  );
 }
 
 async function setAdminRole(guildId, actorId, roleId, action) {
-  const update = action === 'add'
-    ? { $addToSet: { adminRoles: roleId }, $setOnInsert: { guildId } }
-    : { $pull: { adminRoles: roleId }, $setOnInsert: { guildId } };
+  const update =
+    action === 'add'
+      ? { $addToSet: { adminRoles: roleId }, $setOnInsert: { guildId } }
+      : { $pull: { adminRoles: roleId }, $setOnInsert: { guildId } };
 
-  await Guild.findOneAndUpdate(
-    { guildId },
-    update,
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
+  await Guild.findOneAndUpdate({ guildId }, update, { upsert: true, new: true, setDefaultsOnInsert: true });
   await logAudit({ guildId, actorId, action: `config_adminrole_${action}`, metadata: { roleId } });
-  return embed.success('Config Updated', `${action === 'add' ? 'Added' : 'Removed'} <@&${roleId}> ${action === 'add' ? 'as' : 'from'} config/admin access.`);
+  return embed.success(
+    'Config Updated',
+    `${action === 'add' ? 'Added' : 'Removed'} <@&${roleId}> ${action === 'add' ? 'as' : 'from'} config/admin access.`,
+  );
 }
 
 async function resetConfig(guildId, actorId) {
@@ -172,20 +189,36 @@ async function resetConfig(guildId, actorId) {
       },
       $setOnInsert: { guildId },
     },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, new: true, setDefaultsOnInsert: true },
   );
   await logAudit({ guildId, actorId, action: 'config_reset' });
-  return embed.success('Config Reset', 'Prefix, feature toggles, admin roles, and disabled commands were reset to defaults.');
+  return embed.success(
+    'Config Reset',
+    'Prefix, feature toggles, admin roles, and disabled commands were reset to defaults.',
+  );
 }
 
 function buildConfigOverviewEmbed(prefix) {
-  return embed.raw(0x2b2d31)
+  return embed
+    .raw(0x2b2d31)
     .setTitle('Config Commands')
     .setDescription('Configuration has been split into direct commands so server owners can set things up faster.')
     .addFields(
-      { name: 'Setup', value: `\`${prefix}configsetup\`\n\`${prefix}setuphere\`\n\`${prefix}configstatus\``, inline: true },
-      { name: 'Toggles', value: `\`${prefix}togglefeature <feature> <on|off>\`\n\`${prefix}togglecommand <command> <on|off>\`\n\`${prefix}configcommands [category]\``, inline: true },
-      { name: 'Server Settings', value: `\`${prefix}setprefix <newPrefix>\`\n\`${prefix}adminrole add @Role\`\n\`${prefix}resetconfig\``, inline: true },
+      {
+        name: 'Setup',
+        value: `\`${prefix}configsetup\`\n\`${prefix}setuphere\`\n\`${prefix}configstatus\``,
+        inline: true,
+      },
+      {
+        name: 'Toggles',
+        value: `\`${prefix}togglefeature <feature> <on|off>\`\n\`${prefix}togglecommand <command> <on|off>\`\n\`${prefix}configcommands [category]\``,
+        inline: true,
+      },
+      {
+        name: 'Server Settings',
+        value: `\`${prefix}setprefix <newPrefix>\`\n\`${prefix}adminrole add @Role\`\n\`${prefix}resetconfig\``,
+        inline: true,
+      },
     );
 }
 

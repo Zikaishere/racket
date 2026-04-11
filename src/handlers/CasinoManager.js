@@ -12,7 +12,9 @@ class CasinoManager {
 
   getHighlights(guildId) {
     if (!this.liveFeed[guildId] || this.liveFeed[guildId].length === 0) return '*The casino floor is quiet...*';
-    return this.liveFeed[guildId].map(h => `\`[${new Date(h.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}]\` ${h.msg}`).join('\n');
+    return this.liveFeed[guildId]
+      .map((h) => `\`[${new Date(h.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}]\` ${h.msg}`)
+      .join('\n');
   }
 
   // --- Table Management ---
@@ -28,7 +30,7 @@ class CasinoManager {
   getTable(guildId, tableId) {
     return this.tables.get(guildId)?.get(tableId);
   }
-  
+
   deleteTable(guildId, tableId) {
     this.tables.get(guildId)?.delete(tableId);
   }

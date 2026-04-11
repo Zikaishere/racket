@@ -14,14 +14,17 @@ async function runSetupAndBalanceTests() {
   assert.equal(noWanted.remainingMinutes, 0, 'expected no wanted minutes when user is clear');
   assert.equal(noWanted.cost, BAIL_BASE_COST, 'expected base bail cost when there is no remaining wanted time');
 
-  const wantedUntil = new Date(Date.now() + (60 * 60 * 1000));
+  const wantedUntil = new Date(Date.now() + 60 * 60 * 1000);
   const oneHourWanted = getBailCost({ wantedUntil });
-  assert.ok(oneHourWanted.remainingMinutes >= 59 && oneHourWanted.remainingMinutes <= 60, 'expected about one hour of wanted time');
-  assert.equal(oneHourWanted.cost, BAIL_BASE_COST + (oneHourWanted.remainingMinutes * BAIL_COST_PER_MINUTE));
+  assert.ok(
+    oneHourWanted.remainingMinutes >= 59 && oneHourWanted.remainingMinutes <= 60,
+    'expected about one hour of wanted time',
+  );
+  assert.equal(oneHourWanted.cost, BAIL_BASE_COST + oneHourWanted.remainingMinutes * BAIL_COST_PER_MINUTE);
 
   const setupEmbed = buildSetupEmbed('.');
   const setupJson = setupEmbed.toJSON();
-  const setupFieldText = setupJson.fields.map(field => field.value).join('\n');
+  const setupFieldText = setupJson.fields.map((field) => field.value).join('\n');
   assert.match(setupFieldText, /setuphere/, 'expected setup guide to mention setuphere');
   assert.match(setupFieldText, /configcommands/, 'expected setup guide to mention configcommands');
 
@@ -35,8 +38,16 @@ async function runSetupAndBalanceTests() {
     },
   });
 
-  assert.equal(canSendInChannel(makeChannel('general', 1, true), botMember), true, 'expected sendable text channel to be accepted');
-  assert.equal(canSendInChannel(makeChannel('general', 1, false), botMember), false, 'expected blocked text channel to be rejected');
+  assert.equal(
+    canSendInChannel(makeChannel('general', 1, true), botMember),
+    true,
+    'expected sendable text channel to be accepted',
+  );
+  assert.equal(
+    canSendInChannel(makeChannel('general', 1, false), botMember),
+    false,
+    'expected blocked text channel to be rejected',
+  );
 
   const general = makeChannel('general', 5, true);
   const commands = makeChannel('commands', 7, true);

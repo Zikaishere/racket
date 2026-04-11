@@ -8,7 +8,9 @@ function createErrorId() {
 }
 
 function buildUserErrorEmbed(errorId) {
-  return embed.error(`Something went wrong while running that action.\nError ID: \`${errorId}\``);
+  return embed.error(
+    `Something went wrong while running that action.\nError ID: \`${errorId}\`\n\nYou can report this issue using the \`/bug-report\` command.`,
+  );
 }
 
 function serializeError(error) {
@@ -36,9 +38,12 @@ async function notifyDevChannel(client, errorId, payload) {
     const channel = await client.channels.fetch(DEV_LOG_CHANNEL_ID);
     if (!channel?.isTextBased()) return;
 
-    const errorEmbed = embed.raw(0xFF6B6B)
+    const errorEmbed = embed
+      .raw(0xff6b6b)
       .setTitle(`Error Logged: ${errorId}`)
-      .setDescription(`**Source:** ${payload.source}${payload.commandName ? `\n**Command:** ${payload.commandName}` : ''}`)
+      .setDescription(
+        `**Source:** ${payload.source}${payload.commandName ? `\n**Command:** ${payload.commandName}` : ''}`,
+      )
       .addFields(
         { name: 'User ID', value: payload.userId || 'n/a', inline: true },
         { name: 'Guild ID', value: payload.guildId || 'n/a', inline: true },

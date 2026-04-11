@@ -16,7 +16,10 @@ const run = async ({ guildId, page, reply }) => {
 
   const total = await BlackMarket.countDocuments(query);
   if (!total) {
-    return reply({ embeds: [embed.info('Black Market', 'No listings are available right now. Use `/bm-list` to post one.')], ephemeral: true });
+    return reply({
+      embeds: [embed.info('Black Market', 'No listings are available right now. Use `/bm-list` to post one.')],
+      ephemeral: true,
+    });
   }
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -26,7 +29,8 @@ const run = async ({ guildId, page, reply }) => {
     .skip((safePage - 1) * PAGE_SIZE)
     .limit(PAGE_SIZE);
 
-  const marketEmbed = embed.raw(0x2b2d31)
+  const marketEmbed = embed
+    .raw(0x2b2d31)
     .setTitle('Black Market')
     .setDescription('Use `/bm-buy <id>` or `.bm-buy <id>` to purchase a listing.');
 
@@ -53,13 +57,17 @@ module.exports = {
   slash: new SlashCommandBuilder()
     .setName('bm-browse')
     .setDescription('Browse current Black Market listings')
-    .addIntegerOption(o => o.setName('page').setDescription('Page number').setRequired(false).setMinValue(1)),
+    .addIntegerOption((o) => o.setName('page').setDescription('Page number').setRequired(false).setMinValue(1)),
 
   async execute({ message, args }) {
-    return run({ guildId: message.guild.id, page: parseInt(args[0], 10) || 1, reply: data => message.reply(data) });
+    return run({ guildId: message.guild.id, page: parseInt(args[0], 10) || 1, reply: (data) => message.reply(data) });
   },
 
   async executeSlash({ interaction }) {
-    return run({ guildId: interaction.guild.id, page: interaction.options.getInteger('page') || 1, reply: data => interaction.reply(data) });
+    return run({
+      guildId: interaction.guild.id,
+      page: interaction.options.getInteger('page') || 1,
+      reply: (data) => interaction.reply(data),
+    });
   },
 };

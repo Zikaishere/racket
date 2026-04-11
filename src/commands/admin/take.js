@@ -15,8 +15,8 @@ module.exports = {
     .setName('take')
     .setDescription('Take wallet money from a user')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addUserOption(option => option.setName('user').setDescription('User').setRequired(true))
-    .addIntegerOption(option => option.setName('amount').setDescription('Amount').setRequired(true).setMinValue(1)),
+    .addUserOption((option) => option.setName('user').setDescription('User').setRequired(true))
+    .addIntegerOption((option) => option.setName('amount').setDescription('Amount').setRequired(true).setMinValue(1)),
 
   async execute({ message, args }) {
     const target = parseMentionTarget(message);
@@ -28,6 +28,16 @@ module.exports = {
   },
 
   async executeSlash({ interaction }) {
-    return interaction.reply({ embeds: [await handleTake(interaction.guild.id, interaction.user.id, interaction.options.getUser('user'), interaction.options.getInteger('amount'))], ephemeral: true });
+    return interaction.reply({
+      embeds: [
+        await handleTake(
+          interaction.guild.id,
+          interaction.user.id,
+          interaction.options.getUser('user'),
+          interaction.options.getInteger('amount'),
+        ),
+      ],
+      ephemeral: true,
+    });
   },
 };

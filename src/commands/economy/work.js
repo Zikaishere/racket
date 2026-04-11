@@ -28,29 +28,46 @@ const run = async ({ userId, guildId, reply }) => {
     {
       userId,
       guildId,
-      $or: [
-        { lastWork: null },
-        { lastWork: { $lte: new Date(Date.now() - WORK_COOLDOWN) } },
-      ],
+      $or: [{ lastWork: null }, { lastWork: { $lte: new Date(Date.now() - WORK_COOLDOWN) } }],
     },
     {
       $set: { lastWork: new Date() },
       $inc: { balance: finalEarned, totalEarned: finalEarned },
     },
-    { new: true }
+    { new: true },
   );
 
   if (!updated) {
     const user = await User.findOrCreate(userId, guildId);
     const remaining = WORK_COOLDOWN - (Date.now() - new Date(user.lastWork).getTime());
     const mins = Math.ceil(remaining / 60000);
-    return reply({ embeds: [embed.warning('Still Working', `You're still on the clock. Come back in **${mins}m**.`)], ephemeral: true });
+    return reply({
+      embeds: [embed.warning('Still Working', `You're still on the clock. Come back in **${mins}m**.`)],
+      ephemeral: true,
+    });
   }
 
   const job = JOBS[Math.floor(Math.random() * JOBS.length)];
-  await logAudit({ guildId, actorId: userId, targetId: userId, action: 'work_claim', amount: finalEarned, currency: 'wallet', metadata: { job, wantedPenalty: wantedActive } });
-  const penaltyText = wantedActive ? `\n\nWanted status reduced your payout from ${fmt(earned)} to ${fmt(finalEarned)}.` : '';
-  return reply({ embeds: [embed.success('Work Complete', `You ${job} and earned ${fmt(finalEarned)}.\n\nNew balance: ${fmt(updated.balance)}${penaltyText}`)] });
+  await logAudit({
+    guildId,
+    actorId: userId,
+    targetId: userId,
+    action: 'work_claim',
+    amount: finalEarned,
+    currency: 'wallet',
+    metadata: { job, wantedPenalty: wantedActive },
+  });
+  const penaltyText = wantedActive
+    ? `\n\nWanted status reduced your payout from ${fmt(earned)} to ${fmt(finalEarned)}.`
+    : '';
+  return reply({
+    embeds: [
+      embed.success(
+        'Work Complete',
+        `You ${job} and earned ${fmt(finalEarned)}.\n\nNew balance: ${fmt(updated.balance)}${penaltyText}`,
+      ),
+    ],
+  });
 };
 
 module.exports = {
@@ -64,10 +81,14 @@ module.exports = {
   slash: new SlashCommandBuilder().setName('work').setDescription('Work a job and earn some raqs'),
 
   async execute({ message }) {
-    return run({ userId: message.author.id, guildId: message.guild.id, reply: data => message.reply(data) });
+    return run({ userId: message.author.id, guildId: message.guild.id, reply: (data) => message.reply(data) });
   },
 
   async executeSlash({ interaction }) {
-    return run({ userId: interaction.user.id, guildId: interaction.guild.id, reply: data => interaction.reply(data) });
+    return run({
+      userId: interaction.user.id,
+      guildId: interaction.guild.id,
+      reply: (data) => interaction.reply(data),
+    });
   },
 };

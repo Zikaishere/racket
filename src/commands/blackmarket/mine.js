@@ -10,13 +10,16 @@ const run = async ({ userId, guildId, reply }) => {
     sold: false,
     quantity: { $gt: 0 },
     expiresAt: { $gt: new Date() },
-  }).sort({ createdAt: -1 }).limit(10);
+  })
+    .sort({ createdAt: -1 })
+    .limit(10);
 
   if (!listings.length) {
     return reply({ embeds: [embed.info('Your Listings', 'You do not have any active black market listings.')] });
   }
 
-  const marketEmbed = embed.raw(0x2b2d31)
+  const marketEmbed = embed
+    .raw(0x2b2d31)
     .setTitle('Your Listings')
     .setDescription('Use `bm-cancel <id>` to remove one of your listings.');
 
@@ -39,15 +42,17 @@ module.exports = {
   category: 'blackmarket',
   guildOnly: true,
 
-  slash: new SlashCommandBuilder()
-    .setName('bm-mine')
-    .setDescription('View your active black market listings'),
+  slash: new SlashCommandBuilder().setName('bm-mine').setDescription('View your active black market listings'),
 
   async execute({ message }) {
-    return run({ userId: message.author.id, guildId: message.guild.id, reply: data => message.reply(data) });
+    return run({ userId: message.author.id, guildId: message.guild.id, reply: (data) => message.reply(data) });
   },
 
   async executeSlash({ interaction }) {
-    return run({ userId: interaction.user.id, guildId: interaction.guild.id, reply: data => interaction.reply(data) });
+    return run({
+      userId: interaction.user.id,
+      guildId: interaction.guild.id,
+      reply: (data) => interaction.reply(data),
+    });
   },
 };

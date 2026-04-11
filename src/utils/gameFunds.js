@@ -9,7 +9,7 @@ async function reserveFunds({ userId, guildId, game, gameKey, currency, amount, 
   const field = getCurrencyField(currency);
   const debitResult = await User.updateOne(
     { userId, guildId, [field]: { $gte: amount } },
-    { $inc: { [field]: -amount } }
+    { $inc: { [field]: -amount } },
   );
 
   if (debitResult.modifiedCount !== 1) {
@@ -23,7 +23,7 @@ async function reserveFunds({ userId, guildId, game, gameKey, currency, amount, 
       $inc: { amount },
       $set: { metadata, updatedAt: new Date() },
     },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, new: true, setDefaultsOnInsert: true },
   );
 
   return true;
@@ -52,7 +52,7 @@ async function refundReservations({ gameKey }) {
         $setOnInsert: { userId: reservation.userId, guildId: reservation.guildId },
         $inc: { [field]: reservation.amount },
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true },
     );
   }
 
@@ -78,7 +78,7 @@ async function refundReservation({ userId, guildId, gameKey, currency = null }) 
         $setOnInsert: { userId: reservation.userId, guildId: reservation.guildId },
         $inc: { [field]: reservation.amount },
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true },
     );
   }
 
@@ -100,7 +100,7 @@ async function refundAllPendingGameFunds() {
         $setOnInsert: { userId: reservation.userId, guildId: reservation.guildId },
         $inc: { [field]: reservation.amount },
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true },
     );
   }
 

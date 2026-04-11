@@ -7,7 +7,7 @@ const User = require('../../models/User');
 const BlackMarket = require('../../models/BlackMarket');
 
 const addInventoryItem = (inventory, listing, quantity) => {
-  const existing = inventory.find(item => item.name.toLowerCase() === listing.itemName.toLowerCase());
+  const existing = inventory.find((item) => item.name.toLowerCase() === listing.itemName.toLowerCase());
   if (existing) {
     existing.quantity += quantity;
     existing.description = existing.description || listing.itemDesc || 'No description.';
@@ -35,7 +35,7 @@ const findListingByShortId = async (guildId, listingId) => {
     expiresAt: { $gt: new Date() },
   });
 
-  return listings.find(listing => listing._id.toString().slice(-6).toLowerCase() === listingId.toLowerCase());
+  return listings.find((listing) => listing._id.toString().slice(-6).toLowerCase() === listingId.toLowerCase());
 };
 
 const run = async ({ userId, guildId, listingId, quantity, reply }) => {
@@ -47,7 +47,10 @@ const run = async ({ userId, guildId, listingId, quantity, reply }) => {
   const listing = await findListingByShortId(guildId, listingId);
 
   if (!listing) {
-    return reply({ embeds: [embed.error('Listing not found or already sold. Use `bm-browse` to see active listings.')], ephemeral: true });
+    return reply({
+      embeds: [embed.error('Listing not found or already sold. Use `bm-browse` to see active listings.')],
+      ephemeral: true,
+    });
   }
 
   if (listing.sellerId === userId) {
@@ -55,7 +58,10 @@ const run = async ({ userId, guildId, listingId, quantity, reply }) => {
   }
 
   if (desiredQuantity > listing.quantity) {
-    return reply({ embeds: [embed.error(`Only ${listing.quantity} item(s) are available in that listing.`)], ephemeral: true });
+    return reply({
+      embeds: [embed.error(`Only ${listing.quantity} item(s) are available in that listing.`)],
+      ephemeral: true,
+    });
   }
 
   const totalCost = listing.price * desiredQuantity;
@@ -78,7 +84,7 @@ const run = async ({ userId, guildId, listingId, quantity, reply }) => {
       const buyer = await User.findOneAndUpdate(
         { userId, guildId },
         { $setOnInsert: { userId, guildId } },
-        { new: true, upsert: true, setDefaultsOnInsert: true, session }
+        { new: true, upsert: true, setDefaultsOnInsert: true, session },
       );
 
       if (buyer.balance < totalCost) {
@@ -95,7 +101,7 @@ const run = async ({ userId, guildId, listingId, quantity, reply }) => {
           $setOnInsert: { userId: lockedListing.sellerId, guildId },
           $inc: { balance: totalCost, 'stats.blackmarketSales': desiredQuantity },
         },
-        { new: true, upsert: true, setDefaultsOnInsert: true, session }
+        { new: true, upsert: true, setDefaultsOnInsert: true, session },
       );
 
       lockedListing.quantity -= desiredQuantity;
@@ -110,12 +116,18 @@ const run = async ({ userId, guildId, listingId, quantity, reply }) => {
     await session.endSession();
 
     if (error.message === 'LISTING_UNAVAILABLE') {
-      return reply({ embeds: [embed.error('That listing was just sold, reduced, or expired. Refresh the market and try again.')], ephemeral: true });
+      return reply({
+        embeds: [embed.error('That listing was just sold, reduced, or expired. Refresh the market and try again.')],
+        ephemeral: true,
+      });
     }
 
     if (error.message === 'INSUFFICIENT_FUNDS') {
       const buyer = await User.findOrCreate(userId, guildId);
-      return reply({ embeds: [embed.error(`You need ${fmt(totalCost)} to buy that quantity. Your balance: ${fmt(buyer.balance)}`)], ephemeral: true });
+      return reply({
+        embeds: [embed.error(`You need ${fmt(totalCost)} to buy that quantity. Your balance: ${fmt(buyer.balance)}`)],
+        ephemeral: true,
+      });
     }
 
     throw error;
@@ -143,7 +155,7 @@ const run = async ({ userId, guildId, listingId, quantity, reply }) => {
     embeds: [
       embed.success(
         'Purchase Complete',
-        `You bought **${listing.itemName}** x${desiredQuantity} for ${fmt(totalCost)}.\n\nNew balance: ${fmt(updatedBuyer.balance)}`
+        `You bought **${listing.itemName}** x${desiredQuantity} for ${fmt(totalCost)}.\n\nNew balance: ${fmt(updatedBuyer.balance)}`,
       ),
     ],
   });
@@ -160,8 +172,12 @@ module.exports = {
   slash: new SlashCommandBuilder()
     .setName('bm-buy')
     .setDescription('Buy a listing from the Black Market')
-    .addStringOption(o => o.setName('id').setDescription('Listing ID (last 6 characters shown in bm-browse)').setRequired(true))
-    .addIntegerOption(o => o.setName('quantity').setDescription('How many to buy').setRequired(false).setMinValue(1).setMaxValue(99)),
+    .addStringOption((o) =>
+      o.setName('id').setDescription('Listing ID (last 6 characters shown in bm-browse)').setRequired(true),
+    )
+    .addIntegerOption((o) =>
+      o.setName('quantity').setDescription('How many to buy').setRequired(false).setMinValue(1).setMaxValue(99),
+    ),
 
   async execute({ message, args }) {
     return run({
@@ -169,7 +185,7 @@ module.exports = {
       guildId: message.guild.id,
       listingId: args[0],
       quantity: parseInt(args[1], 10) || 1,
-      reply: data => message.reply(data),
+      reply: (data) => message.reply(data),
     });
   },
 
@@ -179,7 +195,7 @@ module.exports = {
       guildId: interaction.guild.id,
       listingId: interaction.options.getString('id'),
       quantity: interaction.options.getInteger('quantity') || 1,
-      reply: data => interaction.reply(data),
+      reply: (data) => interaction.reply(data),
     });
   },
 };

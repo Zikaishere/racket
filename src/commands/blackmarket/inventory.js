@@ -7,7 +7,7 @@ const PAGE_SIZE = 12;
 const run = async ({ userId, guildId, targetUser, page, reply }) => {
   const user = await getUser(userId, guildId);
   const inventory = [...(user.inventory || [])]
-    .filter(item => item.quantity > 0)
+    .filter((item) => item.quantity > 0)
     .sort((a, b) => a.name.localeCompare(b.name));
 
   if (!inventory.length) {
@@ -30,15 +30,19 @@ const run = async ({ userId, guildId, targetUser, page, reply }) => {
         details.push(`GRT ${item.stats.grit || 0}`);
       }
       if (item.estimatedValue) details.push(`est. ${item.estimatedValue.toLocaleString()}`);
-      if (item.description) details.push(item.description.length > 40 ? `${item.description.slice(0, 40)}...` : item.description);
+      if (item.description)
+        details.push(item.description.length > 40 ? `${item.description.slice(0, 40)}...` : item.description);
       return `**${(safePage - 1) * PAGE_SIZE + index + 1}.** ${item.name} x${item.quantity}${details.length ? ` - ${details.join(' | ')}` : ''}`;
     })
     .join('\n');
 
-  const inventoryEmbed = embed.raw(0x2b2d31)
+  const inventoryEmbed = embed
+    .raw(0x2b2d31)
     .setTitle(targetUser ? `${targetUser.username}'s Inventory` : 'Your Inventory')
     .setDescription(description)
-    .setFooter({ text: `Page ${safePage}/${totalPages} | ${inventory.length} item stack(s) | ${totalQuantity} total item(s)` });
+    .setFooter({
+      text: `Page ${safePage}/${totalPages} | ${inventory.length} item stack(s) | ${totalQuantity} total item(s)`,
+    });
 
   return reply({ embeds: [inventoryEmbed] });
 };
@@ -46,7 +50,7 @@ const run = async ({ userId, guildId, targetUser, page, reply }) => {
 module.exports = {
   name: 'inventory',
   aliases: ['inv', 'items'],
-  description: 'View your inventory or another user\'s inventory.',
+  description: "View your inventory or another user's inventory.",
   usage: '[user] [page] - use `inv-inspect` and `inv-sell` for item actions',
   category: 'blackmarket',
   guildOnly: true,
@@ -54,12 +58,12 @@ module.exports = {
   slash: new SlashCommandBuilder()
     .setName('inventory')
     .setDescription('View inventory')
-    .addUserOption(o => o.setName('user').setDescription('User to inspect').setRequired(false))
-    .addIntegerOption(o => o.setName('page').setDescription('Page number').setRequired(false).setMinValue(1)),
+    .addUserOption((o) => o.setName('user').setDescription('User to inspect').setRequired(false))
+    .addIntegerOption((o) => o.setName('page').setDescription('Page number').setRequired(false).setMinValue(1)),
 
   async execute({ message, args }) {
     const target = message.mentions.users.first();
-    const filteredArgs = args.filter(arg => !arg.startsWith('<@'));
+    const filteredArgs = args.filter((arg) => !arg.startsWith('<@'));
     const page = parseInt(filteredArgs[0], 10) || 1;
 
     return run({
@@ -67,7 +71,7 @@ module.exports = {
       guildId: message.guild.id,
       targetUser: target,
       page,
-      reply: data => message.reply(data),
+      reply: (data) => message.reply(data),
     });
   },
 
@@ -78,7 +82,7 @@ module.exports = {
       guildId: interaction.guild.id,
       targetUser: target,
       page: interaction.options.getInteger('page') || 1,
-      reply: data => interaction.reply(data),
+      reply: (data) => interaction.reply(data),
     });
   },
 };

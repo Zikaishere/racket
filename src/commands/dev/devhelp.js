@@ -16,7 +16,7 @@ module.exports = {
       .map((cmd) => `**\`${prefix}${cmd.name}${cmd.usage ? ` ${cmd.usage}` : ''}\`**\n${cmd.description}`);
 
     return message.reply({
-      embeds: [embed.info('Developer Help', lines.join('\n\n') || 'No dev commands loaded.')]
+      embeds: [embed.info('Developer Help', lines.join('\n\n') || 'No dev commands loaded.')],
     });
-  }
+  },
 };

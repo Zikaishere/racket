@@ -19,7 +19,7 @@ async function addBalance(userId, guildId, amount) {
         totalEarned: amount > 0 ? amount : 0,
       },
     },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, new: true, setDefaultsOnInsert: true },
   );
 
   const user = await getUser(userId, guildId);
@@ -27,10 +27,7 @@ async function addBalance(userId, guildId, amount) {
 }
 
 async function removeBalance(userId, guildId, amount) {
-  const result = await User.updateOne(
-    { userId, guildId, balance: { $gte: amount } },
-    { $inc: { balance: -amount } }
-  );
+  const result = await User.updateOne({ userId, guildId, balance: { $gte: amount } }, { $inc: { balance: -amount } });
 
   if (result.modifiedCount !== 1) return false;
   const user = await getUser(userId, guildId);
@@ -40,7 +37,7 @@ async function removeBalance(userId, guildId, amount) {
 async function deposit(userId, guildId, amount) {
   const result = await User.updateOne(
     { userId, guildId, balance: { $gte: amount } },
-    { $inc: { balance: -amount, bank: amount } }
+    { $inc: { balance: -amount, bank: amount } },
   );
 
   return result.modifiedCount === 1;
@@ -49,7 +46,7 @@ async function deposit(userId, guildId, amount) {
 async function withdraw(userId, guildId, amount) {
   const result = await User.updateOne(
     { userId, guildId, bank: { $gte: amount } },
-    { $inc: { bank: -amount, balance: amount } }
+    { $inc: { bank: -amount, balance: amount } },
   );
 
   return result.modifiedCount === 1;
@@ -59,7 +56,7 @@ async function addChips(userId, guildId, amount) {
   await User.findOneAndUpdate(
     { userId, guildId },
     { $setOnInsert: { userId, guildId }, $inc: { chips: amount } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, new: true, setDefaultsOnInsert: true },
   );
 
   const user = await getUser(userId, guildId);
@@ -67,10 +64,7 @@ async function addChips(userId, guildId, amount) {
 }
 
 async function removeChips(userId, guildId, amount) {
-  const result = await User.updateOne(
-    { userId, guildId, chips: { $gte: amount } },
-    { $inc: { chips: -amount } }
-  );
+  const result = await User.updateOne({ userId, guildId, chips: { $gte: amount } }, { $inc: { chips: -amount } });
 
   if (result.modifiedCount !== 1) return false;
   const user = await getUser(userId, guildId);
@@ -80,7 +74,7 @@ async function removeChips(userId, guildId, amount) {
 async function transfer(fromId, toId, guildId, amount) {
   const debitResult = await User.updateOne(
     { userId: fromId, guildId, balance: { $gte: amount } },
-    { $inc: { balance: -amount } }
+    { $inc: { balance: -amount } },
   );
 
   if (debitResult.modifiedCount !== 1) {
@@ -90,7 +84,7 @@ async function transfer(fromId, toId, guildId, amount) {
   await User.findOneAndUpdate(
     { userId: toId, guildId },
     { $setOnInsert: { userId: toId, guildId }, $inc: { balance: amount, totalEarned: amount } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, new: true, setDefaultsOnInsert: true },
   );
 
   return true;

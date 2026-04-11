@@ -34,9 +34,9 @@ module.exports = {
             'moderation.globalBanReason': reason,
             'moderation.globalBannedAt': new Date(),
             'moderation.globalBannedBy': message.author.id,
-          }
+          },
         },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
+        { upsert: true, new: true, setDefaultsOnInsert: true },
       );
     }
 
@@ -44,11 +44,16 @@ module.exports = {
       actorId: message.author.id,
       targetId,
       action: 'dev_global_ban',
-      metadata: { reason, guildCount: guildIds.length }
+      metadata: { reason, guildCount: guildIds.length },
     });
 
     return message.reply({
-      embeds: [embed.success('Global Ban Applied', `<@${targetId}> is now blocked from economy and game commands across **${guildIds.length}** guild(s).${reason ? `\nReason: ${reason}` : ''}`)]
+      embeds: [
+        embed.success(
+          'Global Ban Applied',
+          `<@${targetId}> is now blocked from economy and game commands across **${guildIds.length}** guild(s).${reason ? `\nReason: ${reason}` : ''}`,
+        ),
+      ],
     });
-  }
+  },
 };

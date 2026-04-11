@@ -4,9 +4,7 @@ const { getUser, fmt } = require('../../utils/economy');
 const { logAudit } = require('../../utils/audit');
 
 function getInventorySorted(user) {
-  return [...(user.inventory || [])]
-    .filter(item => item.quantity > 0)
-    .sort((a, b) => a.name.localeCompare(b.name));
+  return [...(user.inventory || [])].filter((item) => item.quantity > 0).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function findEntryIndex(inventory, query) {
@@ -15,7 +13,7 @@ function findEntryIndex(inventory, query) {
     return asIndex - 1;
   }
 
-  return inventory.findIndex(item => item.name.toLowerCase() === query.toLowerCase());
+  return inventory.findIndex((item) => item.name.toLowerCase() === query.toLowerCase());
 }
 
 const run = async ({ userId, guildId, query, quantity, reply }) => {
@@ -28,7 +26,13 @@ const run = async ({ userId, guildId, query, quantity, reply }) => {
 
   const itemIndex = findEntryIndex(inventory, query);
   if (itemIndex === -1) {
-    return reply({ embeds: [embed.error('That item was not found in your inventory. Use `inventory` to see your item names or slot numbers.')] });
+    return reply({
+      embeds: [
+        embed.error(
+          'That item was not found in your inventory. Use `inventory` to see your item names or slot numbers.',
+        ),
+      ],
+    });
   }
 
   const item = inventory[itemIndex];
@@ -40,14 +44,16 @@ const run = async ({ userId, guildId, query, quantity, reply }) => {
   const baseValue = Math.max(1, Math.floor((item.estimatedValue || 10) * 0.5));
   const payout = baseValue * sellQuantity;
 
-  const actualEntry = user.inventory.find(entry =>
-    entry.name.toLowerCase() === item.name.toLowerCase() && entry.quantity > 0
+  const actualEntry = user.inventory.find(
+    (entry) => entry.name.toLowerCase() === item.name.toLowerCase() && entry.quantity > 0,
   );
 
   actualEntry.quantity -= sellQuantity;
   user.balance += payout;
   if (actualEntry.quantity <= 0) {
-    user.inventory = user.inventory.filter(entry => !(entry.name.toLowerCase() === item.name.toLowerCase() && entry.quantity <= 0));
+    user.inventory = user.inventory.filter(
+      (entry) => !(entry.name.toLowerCase() === item.name.toLowerCase() && entry.quantity <= 0),
+    );
   }
 
   await user.save();
@@ -69,7 +75,7 @@ const run = async ({ userId, guildId, query, quantity, reply }) => {
     embeds: [
       embed.success(
         'Item Sold',
-        `You sold **${item.name}** x${sellQuantity} for ${fmt(payout)}.\n\nNew balance: ${fmt(user.balance)}`
+        `You sold **${item.name}** x${sellQuantity} for ${fmt(payout)}.\n\nNew balance: ${fmt(user.balance)}`,
       ),
     ],
   });
@@ -86,8 +92,10 @@ module.exports = {
   slash: new SlashCommandBuilder()
     .setName('inv-sell')
     .setDescription('Sell an item from your inventory')
-    .addStringOption(o => o.setName('item').setDescription('Item name or slot number').setRequired(true))
-    .addIntegerOption(o => o.setName('quantity').setDescription('How many to sell').setRequired(false).setMinValue(1).setMaxValue(999)),
+    .addStringOption((o) => o.setName('item').setDescription('Item name or slot number').setRequired(true))
+    .addIntegerOption((o) =>
+      o.setName('quantity').setDescription('How many to sell').setRequired(false).setMinValue(1).setMaxValue(999),
+    ),
 
   async execute({ message, args }) {
     const lastArg = args[args.length - 1];
@@ -100,7 +108,7 @@ module.exports = {
       guildId: message.guild.id,
       query,
       quantity,
-      reply: data => message.reply(data),
+      reply: (data) => message.reply(data),
     });
   },
 
@@ -110,7 +118,7 @@ module.exports = {
       guildId: interaction.guild.id,
       query: interaction.options.getString('item'),
       quantity: interaction.options.getInteger('quantity') || 1,
-      reply: data => interaction.reply(data),
+      reply: (data) => interaction.reply(data),
     });
   },
 };

@@ -8,7 +8,7 @@ class EventHandler {
 
   load() {
     const eventsPath = path.join(__dirname, '../events');
-    const files = fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'));
+    const files = fs.readdirSync(eventsPath).filter((f) => f.endsWith('.js'));
 
     for (const file of files) {
       const event = require(path.join(eventsPath, file));

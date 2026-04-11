@@ -4,7 +4,7 @@ const { resetConfig } = require('../../utils/configTools');
 module.exports = {
   name: 'resetconfig',
   aliases: ['cfgreset'],
-  description: 'Reset this server\'s bot configuration to defaults.',
+  description: "Reset this server's bot configuration to defaults.",
   usage: '',
   category: 'config',
   guildOnly: true,
@@ -12,7 +12,7 @@ module.exports = {
 
   slash: new SlashCommandBuilder()
     .setName('resetconfig')
-    .setDescription('Reset this server\'s bot configuration to defaults')
+    .setDescription("Reset this server's bot configuration to defaults")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   async execute({ message }) {
@@ -20,6 +20,9 @@ module.exports = {
   },
 
   async executeSlash({ interaction }) {
-    return interaction.reply({ embeds: [await resetConfig(interaction.guild.id, interaction.user.id)], ephemeral: true });
+    return interaction.reply({
+      embeds: [await resetConfig(interaction.guild.id, interaction.user.id)],
+      ephemeral: true,
+    });
   },
 };

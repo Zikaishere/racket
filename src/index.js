@@ -47,7 +47,7 @@ async function connectDB() {
 }
 
 connectDB().then(() => {
-  client.login(process.env.BOT_TOKEN).catch(err => {
+  client.login(process.env.BOT_TOKEN).catch((err) => {
     console.error('Login failed:', err);
     process.exit(1);
   });

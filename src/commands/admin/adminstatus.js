@@ -5,7 +5,7 @@ const { parseMentionTarget, buildStatusEmbed } = require('../../utils/adminTools
 module.exports = {
   name: 'adminstatus',
   aliases: ['astatus'],
-  description: 'Inspect a user\'s economy and moderation state.',
+  description: "Inspect a user's economy and moderation state.",
   usage: '<@user>',
   category: 'admin',
   guildOnly: true,
@@ -13,9 +13,9 @@ module.exports = {
 
   slash: new SlashCommandBuilder()
     .setName('adminstatus')
-    .setDescription('Inspect a user\'s account state')
+    .setDescription("Inspect a user's account state")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addUserOption(option => option.setName('user').setDescription('User').setRequired(true)),
+    .addUserOption((option) => option.setName('user').setDescription('User').setRequired(true)),
 
   async execute({ message }) {
     const target = parseMentionTarget(message);
@@ -26,6 +26,9 @@ module.exports = {
   },
 
   async executeSlash({ interaction }) {
-    return interaction.reply({ embeds: [await buildStatusEmbed(interaction.guild.id, interaction.options.getUser('user'))], ephemeral: true });
+    return interaction.reply({
+      embeds: [await buildStatusEmbed(interaction.guild.id, interaction.options.getUser('user'))],
+      ephemeral: true,
+    });
   },
 };

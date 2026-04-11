@@ -19,8 +19,7 @@ module.exports = {
       const commandName = args.shift()?.toLowerCase();
       if (!commandName) return;
 
-      const command = client.commands.get(commandName)
-        || client.commands.get(client.aliases.get(commandName));
+      const command = client.commands.get(commandName) || client.commands.get(client.aliases.get(commandName));
 
       if (!command) return;
 
@@ -37,14 +36,18 @@ module.exports = {
       try {
         await command.execute({ message, args, client, prefix: DEV_PREFIX, isDev: true, guildData });
       } catch (err) {
-        const errorId = await logError(err, {
-          source: 'message_dev_command',
-          commandName: command.name,
-          userId: message.author.id,
-          guildId: message.guild?.id || null,
-          channelId: message.channel?.id || null,
-          metadata: { args },
-        }, client);
+        const errorId = await logError(
+          err,
+          {
+            source: 'message_dev_command',
+            commandName: command.name,
+            userId: message.author.id,
+            guildId: message.guild?.id || null,
+            channelId: message.channel?.id || null,
+            metadata: { args },
+          },
+          client,
+        );
         message.reply({ embeds: [buildUserErrorEmbed(errorId)] });
       }
       return;
@@ -62,8 +65,7 @@ module.exports = {
     const commandName = args.shift().toLowerCase();
 
     // Resolve command or alias
-    const command = client.commands.get(commandName)
-      || client.commands.get(client.aliases.get(commandName));
+    const command = client.commands.get(commandName) || client.commands.get(client.aliases.get(commandName));
 
     if (!command) return;
     if (command.devOnly) return;
@@ -77,11 +79,15 @@ module.exports = {
       const user = await User.findOrCreate(message.author.id, message.guild.id);
       if (user.moderation?.globallyBanned) {
         const reason = user.moderation.globalBanReason ? `\nReason: ${user.moderation.globalBanReason}` : '';
-        return message.reply({ embeds: [embed.error(`You are globally banned from using economy and game features.${reason}`)] });
+        return message.reply({
+          embeds: [embed.error(`You are globally banned from using economy and game features.${reason}`)],
+        });
       }
       if (user.moderation?.frozen) {
         const reason = user.moderation.freezeReason ? `\nReason: ${user.moderation.freezeReason}` : '';
-        return message.reply({ embeds: [embed.error(`Your account is frozen and cannot use economy features right now.${reason}`)] });
+        return message.reply({
+          embeds: [embed.error(`Your account is frozen and cannot use economy features right now.${reason}`)],
+        });
       }
     }
 
@@ -97,24 +103,30 @@ module.exports = {
 
     // Admin check
     if (command.adminOnly) {
-      const isAdmin = message.member.permissions.has('Administrator')
-        || guildData.adminRoles.some(r => message.member.roles.cache.has(r));
-      if (!isAdmin) return message.reply({ embeds: [embed.error('You need to be an administrator to use this command.')] });
+      const isAdmin =
+        message.member.permissions.has('Administrator') ||
+        guildData.adminRoles.some((r) => message.member.roles.cache.has(r));
+      if (!isAdmin)
+        return message.reply({ embeds: [embed.error('You need to be an administrator to use this command.')] });
     }
 
     // Run the command
     try {
       await command.execute({ message, args, client, guildData, prefix });
     } catch (err) {
-      const errorId = await logError(err, {
-        source: 'message_command',
-        commandName: command.name,
-        userId: message.author.id,
-        guildId: message.guild?.id || null,
-        channelId: message.channel?.id || null,
-        metadata: { args },
-      }, client);
+      const errorId = await logError(
+        err,
+        {
+          source: 'message_command',
+          commandName: command.name,
+          userId: message.author.id,
+          guildId: message.guild?.id || null,
+          channelId: message.channel?.id || null,
+          metadata: { args },
+        },
+        client,
+      );
       message.reply({ embeds: [buildUserErrorEmbed(errorId)] });
     }
-  }
+  },
 };

@@ -10,15 +10,17 @@ function canSendInChannel(channel, botMember) {
   if (!channel || !botMember) return false;
   if (![ChannelType.GuildText, ChannelType.GuildAnnouncement].includes(channel.type)) return false;
 
-  return channel.permissionsFor(botMember)?.has([
-    PermissionsBitField.Flags.ViewChannel,
-    PermissionsBitField.Flags.SendMessages,
-    PermissionsBitField.Flags.EmbedLinks,
-  ]);
+  return channel
+    .permissionsFor(botMember)
+    ?.has([
+      PermissionsBitField.Flags.ViewChannel,
+      PermissionsBitField.Flags.SendMessages,
+      PermissionsBitField.Flags.EmbedLinks,
+    ]);
 }
 
 async function findWelcomeChannel(guild) {
-  const botMember = guild.members.me || await guild.members.fetchMe().catch(() => null);
+  const botMember = guild.members.me || (await guild.members.fetchMe().catch(() => null));
   if (!botMember) return null;
 
   if (canSendInChannel(guild.systemChannel, botMember)) {
@@ -27,12 +29,12 @@ async function findWelcomeChannel(guild) {
 
   const fetchedChannels = await guild.channels.fetch().catch(() => guild.channels.cache);
   const sendableChannels = fetchedChannels
-    .filter(channel => canSendInChannel(channel, botMember))
+    .filter((channel) => canSendInChannel(channel, botMember))
     .sort((a, b) => a.rawPosition - b.rawPosition);
 
-  const preferredChannel = PREFERRED_CHANNEL_NAMES
-    .map(name => sendableChannels.find(channel => channel.name?.toLowerCase() === name))
-    .find(Boolean);
+  const preferredChannel = PREFERRED_CHANNEL_NAMES.map((name) =>
+    sendableChannels.find((channel) => channel.name?.toLowerCase() === name),
+  ).find(Boolean);
   return preferredChannel || sendableChannels.first() || null;
 }
 
@@ -43,9 +45,11 @@ module.exports = {
     const welcomeChannel = await findWelcomeChannel(guild);
 
     if (welcomeChannel) {
-      await welcomeChannel.send({
-        embeds: [buildSetupEmbed(guildData.prefix || DEFAULT_PREFIX)],
-      }).catch(() => {});
+      await welcomeChannel
+        .send({
+          embeds: [buildSetupEmbed(guildData.prefix || DEFAULT_PREFIX)],
+        })
+        .catch(() => {});
     }
 
     let ownerId = 'Unknown';
@@ -56,13 +60,14 @@ module.exports = {
       ownerId = guild.ownerId || 'Unknown';
     }
 
-    const devEmbed = embed.raw(0x457B9D)
+    const devEmbed = embed
+      .raw(0x457b9d)
       .setTitle('Bot Joined New Server')
       .setDescription(`**${guild.name}**`)
       .addFields(
         { name: 'Server ID', value: guild.id, inline: true },
         { name: 'Owner ID', value: ownerId, inline: true },
-        { name: 'Members', value: `${guild.memberCount || 0}`, inline: true }
+        { name: 'Members', value: `${guild.memberCount || 0}`, inline: true },
       );
 
     if (!DEV_LOG_CHANNEL_ID) return;

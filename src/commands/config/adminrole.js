@@ -15,11 +15,14 @@ module.exports = {
     .setName('adminrole')
     .setDescription('Add or remove an admin role')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addStringOption(option => option.setName('action').setDescription('Add or remove').setRequired(true).addChoices(
-      { name: 'Add', value: 'add' },
-      { name: 'Remove', value: 'remove' }
-    ))
-    .addRoleOption(option => option.setName('role').setDescription('Role to update').setRequired(true)),
+    .addStringOption((option) =>
+      option
+        .setName('action')
+        .setDescription('Add or remove')
+        .setRequired(true)
+        .addChoices({ name: 'Add', value: 'add' }, { name: 'Remove', value: 'remove' }),
+    )
+    .addRoleOption((option) => option.setName('role').setDescription('Role to update').setRequired(true)),
 
   async execute({ message, args }) {
     const action = args[0]?.toLowerCase();
@@ -31,6 +34,16 @@ module.exports = {
   },
 
   async executeSlash({ interaction }) {
-    return interaction.reply({ embeds: [await setAdminRole(interaction.guild.id, interaction.user.id, interaction.options.getRole('role').id, interaction.options.getString('action'))], ephemeral: true });
+    return interaction.reply({
+      embeds: [
+        await setAdminRole(
+          interaction.guild.id,
+          interaction.user.id,
+          interaction.options.getRole('role').id,
+          interaction.options.getString('action'),
+        ),
+      ],
+      ephemeral: true,
+    });
   },
 };

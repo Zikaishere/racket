@@ -23,7 +23,7 @@ module.exports = {
       embeds: [
         embed.warning(
           'Database Wipe Confirmation Required',
-          `This will delete the entire Mongo database for the bot.\n\nTo confirm, run \`${DEV_PREFIX}confirmdbwipe ${request.token}\` within ${minutes} minute(s).`
+          `This will delete the entire Mongo database for the bot.\n\nTo confirm, run \`${DEV_PREFIX}confirmdbwipe ${request.token}\` within ${minutes} minute(s).`,
         ),
       ],
     });

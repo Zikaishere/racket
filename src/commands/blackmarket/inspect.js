@@ -10,13 +10,13 @@ function findInventoryEntry(inventory, query) {
     return inventory[asIndex - 1];
   }
 
-  return inventory.find(item => item.name.toLowerCase() === query.toLowerCase());
+  return inventory.find((item) => item.name.toLowerCase() === query.toLowerCase());
 }
 
 const run = async ({ userId, guildId, query, reply }) => {
   const user = await getUser(userId, guildId);
   const inventory = [...(user.inventory || [])]
-    .filter(item => item.quantity > 0)
+    .filter((item) => item.quantity > 0)
     .sort((a, b) => a.name.localeCompare(b.name));
 
   if (!inventory.length) {
@@ -25,10 +25,17 @@ const run = async ({ userId, guildId, query, reply }) => {
 
   const item = findInventoryEntry(inventory, query);
   if (!item) {
-    return reply({ embeds: [embed.error('That item was not found in your inventory. Use `inventory` to see your item names or slot numbers.')] });
+    return reply({
+      embeds: [
+        embed.error(
+          'That item was not found in your inventory. Use `inventory` to see your item names or slot numbers.',
+        ),
+      ],
+    });
   }
 
-  const detailsEmbed = embed.raw(0x2b2d31)
+  const detailsEmbed = embed
+    .raw(0x2b2d31)
     .setTitle(`Inventory Item: ${item.name}`)
     .setDescription(item.description || 'No description.')
     .addFields(
@@ -36,14 +43,14 @@ const run = async ({ userId, guildId, query, reply }) => {
       { name: 'Rarity', value: item.rarity || 'common', inline: true },
       { name: 'Quantity', value: `${item.quantity}`, inline: true },
       { name: 'Estimated Value', value: item.estimatedValue ? fmt(item.estimatedValue) : 'Unknown', inline: true },
-      { name: 'Source', value: item.source || 'Unknown', inline: true }
+      { name: 'Source', value: item.source || 'Unknown', inline: true },
     );
 
   if (item.kind === 'chicken' && item.stats) {
     detailsEmbed.addFields(
       { name: 'Strength', value: `${item.stats.strength || 0}`, inline: true },
       { name: 'Speed', value: `${item.stats.speed || 0}`, inline: true },
-      { name: 'Grit', value: `${item.stats.grit || 0}`, inline: true }
+      { name: 'Grit', value: `${item.stats.grit || 0}`, inline: true },
     );
   }
 
@@ -65,14 +72,16 @@ module.exports = {
   slash: new SlashCommandBuilder()
     .setName('inv-inspect')
     .setDescription('Inspect an item in your inventory')
-    .addStringOption(o => o.setName('item').setDescription('Item name or slot number from inventory').setRequired(true)),
+    .addStringOption((o) =>
+      o.setName('item').setDescription('Item name or slot number from inventory').setRequired(true),
+    ),
 
   async execute({ message, args }) {
     return run({
       userId: message.author.id,
       guildId: message.guild.id,
       query: args.join(' '),
-      reply: data => message.reply(data),
+      reply: (data) => message.reply(data),
     });
   },
 
@@ -81,7 +90,7 @@ module.exports = {
       userId: interaction.user.id,
       guildId: interaction.guild.id,
       query: interaction.options.getString('item'),
-      reply: data => interaction.reply(data),
+      reply: (data) => interaction.reply(data),
     });
   },
 };
