@@ -68,9 +68,11 @@ function buildCategoryEmbed(client, category, prefix) {
     const cmd = client.commands.get(name);
     if (!cmd) continue;
 
-    const aliases = cmd.aliases?.length ? ` (${cmd.aliases.map((alias) => `\`${prefix}${alias}\``).join(', ')})` : '';
+    const aliases = cmd.aliases?.length ? ` (Also: ${cmd.aliases.map((a) => `\`${a}\``).join(', ')})` : '';
 
-    lines.push(`**\`${prefix}${cmd.name}${cmd.usage ? ` ${cmd.usage}` : ''}\`**${aliases}\n${cmd.description}`);
+    lines.push(
+      `**❯ ${cmd.name.charAt(0).toUpperCase() + cmd.name.slice(1)}**\n> ${cmd.description}\n> ⌨️ \`${prefix}${cmd.name}${cmd.usage ? ` ${cmd.usage}` : ''}\`${aliases}`,
+    );
   }
 
   e.setDescription(lines.join('\n\n') || 'No commands in this category.');
@@ -133,17 +135,15 @@ module.exports = {
       const cmd = client.commands.get(query) || client.commands.get(client.aliases.get(query));
       if (cmd && !(cmd.category === 'dev' && !DEV_IDS.includes(message.author.id))) {
         const icon = CATEGORY_ICONS[cmd.category] || '\uD83D\uDCC1';
-        const e = embed
-          .info(`${icon} ${cmd.name}`, cmd.description)
-          .addFields(
-            { name: 'Usage', value: `\`${prefix}${cmd.name}${cmd.usage ? ` ${cmd.usage}` : ''}\``, inline: true },
-            { name: 'Category', value: cmd.category, inline: true },
-            {
-              name: 'Aliases',
-              value: cmd.aliases?.length ? cmd.aliases.map((alias) => `\`${alias}\``).join(', ') : 'None',
-              inline: true,
-            },
-          );
+        const e = embed.info(`${icon} ${cmd.name}`, cmd.description).addFields(
+          { name: 'Usage', value: `\`${prefix}${cmd.name}${cmd.usage ? ` ${cmd.usage}` : ''}\``, inline: true },
+          { name: 'Category', value: cmd.category, inline: true },
+          {
+            name: 'Aliases',
+            value: cmd.aliases?.length ? cmd.aliases.map((alias) => `\`${alias}\``).join(', ') : 'None',
+            inline: true,
+          },
+        );
         return message.reply({ embeds: [e] });
       }
 
@@ -193,17 +193,15 @@ module.exports = {
       const cmd = client.commands.get(query) || client.commands.get(client.aliases.get(query));
       if (cmd && !(cmd.category === 'dev' && !DEV_IDS.includes(interaction.user.id))) {
         const icon = CATEGORY_ICONS[cmd.category] || '\uD83D\uDCC1';
-        const e = embed
-          .info(`${icon} ${cmd.name}`, cmd.description)
-          .addFields(
-            { name: 'Usage', value: `\`${prefix}${cmd.name}${cmd.usage ? ` ${cmd.usage}` : ''}\``, inline: true },
-            { name: 'Category', value: cmd.category, inline: true },
-            {
-              name: 'Aliases',
-              value: cmd.aliases?.length ? cmd.aliases.map((alias) => `\`${alias}\``).join(', ') : 'None',
-              inline: true,
-            },
-          );
+        const e = embed.info(`${icon} ${cmd.name}`, cmd.description).addFields(
+          { name: 'Usage', value: `\`${prefix}${cmd.name}${cmd.usage ? ` ${cmd.usage}` : ''}\``, inline: true },
+          { name: 'Category', value: cmd.category, inline: true },
+          {
+            name: 'Aliases',
+            value: cmd.aliases?.length ? cmd.aliases.map((alias) => `\`${alias}\``).join(', ') : 'None',
+            inline: true,
+          },
+        );
         return interaction.reply({ embeds: [e], ephemeral: true });
       }
 

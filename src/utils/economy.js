@@ -10,7 +10,7 @@ async function getUser(userId, guildId) {
 }
 
 async function addBalance(userId, guildId, amount) {
-  await User.findOneAndUpdate(
+  const user = await User.findOneAndUpdate(
     { userId, guildId },
     {
       $setOnInsert: { userId, guildId },
@@ -21,16 +21,17 @@ async function addBalance(userId, guildId, amount) {
     },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
-
-  const user = await getUser(userId, guildId);
   return user.balance;
 }
 
 async function removeBalance(userId, guildId, amount) {
-  const result = await User.updateOne({ userId, guildId, balance: { $gte: amount } }, { $inc: { balance: -amount } });
+  const user = await User.findOneAndUpdate(
+    { userId, guildId, balance: { $gte: amount } },
+    { $inc: { balance: -amount } },
+    { new: true },
+  );
 
-  if (result.modifiedCount !== 1) return false;
-  const user = await getUser(userId, guildId);
+  if (!user) return false;
   return user.balance;
 }
 
@@ -53,21 +54,22 @@ async function withdraw(userId, guildId, amount) {
 }
 
 async function addChips(userId, guildId, amount) {
-  await User.findOneAndUpdate(
+  const user = await User.findOneAndUpdate(
     { userId, guildId },
     { $setOnInsert: { userId, guildId }, $inc: { chips: amount } },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   );
-
-  const user = await getUser(userId, guildId);
   return user.chips;
 }
 
 async function removeChips(userId, guildId, amount) {
-  const result = await User.updateOne({ userId, guildId, chips: { $gte: amount } }, { $inc: { chips: -amount } });
+  const user = await User.findOneAndUpdate(
+    { userId, guildId, chips: { $gte: amount } },
+    { $inc: { chips: -amount } },
+    { new: true },
+  );
 
-  if (result.modifiedCount !== 1) return false;
-  const user = await getUser(userId, guildId);
+  if (!user) return false;
   return user.chips;
 }
 
@@ -101,33 +103,52 @@ async function hasChips(userId, guildId, amount) {
 }
 
 async function recordGame(userId, guildId, won, wagered) {
-  const user = await getUser(userId, guildId);
-
-  user.stats.gamesPlayed += 1;
-  if (won) user.stats.gamesWon += 1;
-  user.stats.totalWagered += wagered;
-
-  if (won) {
-    user.stats.currentStreak = user.stats.currentStreak > 0 ? user.stats.currentStreak + 1 : 1;
-  } else {
-    user.stats.currentStreak = user.stats.currentStreak < 0 ? user.stats.currentStreak - 1 : -1;
-  }
-
-  if (user.stats.currentStreak >= 3) {
-    user.luck = 1.05;
-  } else if (user.stats.currentStreak <= -3) {
-    user.luck = 0.95;
-  } else {
-    user.luck = 1.0;
-  }
-
-  let newRank = 'Regular';
-  if (user.stats.totalWagered >= RANK_THRESHOLDS.Whale) newRank = 'Whale';
-  else if (user.stats.totalWagered >= RANK_THRESHOLDS.VIP) newRank = 'VIP';
-  else if (user.stats.totalWagered >= RANK_THRESHOLDS['High Roller']) newRank = 'High Roller';
-
-  user.casinoRank = newRank;
-  await user.save();
+  await User.findOneAndUpdate(
+    { userId, guildId },
+    [
+      {
+        $set: {
+          userId: { $ifNull: ['$userId', userId] },
+          guildId: { $ifNull: ['$guildId', guildId] },
+          'stats.gamesPlayed': { $add: [{ $ifNull: ['$stats.gamesPlayed', 0] }, 1] },
+          'stats.gamesWon': { $add: [{ $ifNull: ['$stats.gamesWon', 0] }, won ? 1 : 0] },
+          'stats.totalWagered': { $add: [{ $ifNull: ['$stats.totalWagered', 0] }, wagered] },
+          'stats.currentStreak': {
+            $let: {
+              vars: { streak: { $ifNull: ['$stats.currentStreak', 0] } },
+              in: won
+                ? { $cond: [{ $gt: ['$$streak', 0] }, { $add: ['$$streak', 1] }, 1] }
+                : { $cond: [{ $lt: ['$$streak', 0] }, { $subtract: ['$$streak', 1] }, -1] },
+            },
+          },
+        },
+      },
+      {
+        $set: {
+          luck: {
+            $switch: {
+              branches: [
+                { case: { $gte: ['$stats.currentStreak', 3] }, then: 1.05 },
+                { case: { $lte: ['$stats.currentStreak', -3] }, then: 0.95 },
+              ],
+              default: 1.0,
+            },
+          },
+          casinoRank: {
+            $switch: {
+              branches: [
+                { case: { $gte: ['$stats.totalWagered', RANK_THRESHOLDS.Whale] }, then: 'Whale' },
+                { case: { $gte: ['$stats.totalWagered', RANK_THRESHOLDS.VIP] }, then: 'VIP' },
+                { case: { $gte: ['$stats.totalWagered', RANK_THRESHOLDS['High Roller']] }, then: 'High Roller' },
+              ],
+              default: 'Regular',
+            },
+          },
+        },
+      },
+    ],
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  );
 }
 
 module.exports = {
