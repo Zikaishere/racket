@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const embed = require('../../utils/embed');
 const { getUser, fmt } = require('../../utils/economy');
 
-const run = async ({ userId, guildId, targetUser, client, reply }) => {
+const run = async ({ userId, guildId, targetUser, _client, reply }) => {
   const user = await getUser(userId, guildId);
   const name = targetUser ? `${targetUser.username}'s` : 'Your';
 
@@ -30,7 +30,7 @@ module.exports = {
     .setDescription("Check your or someone else's balance")
     .addUserOption((o) => o.setName('user').setDescription('User to check').setRequired(false)),
 
-  async execute({ message, args, client }) {
+  async execute({ message, _args, client }) {
     const target = message.mentions.users.first();
     const userId = target ? target.id : message.author.id;
     return run({ userId, guildId: message.guild.id, targetUser: target, client, reply: (d) => message.reply(d) });

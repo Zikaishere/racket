@@ -24,7 +24,7 @@ module.exports = {
   category: 'dev',
   devOnly: true,
 
-  async execute({ message, args, client }) {
+  async execute({ message, args, _client }) {
     const code = args.join(' ').trim();
     if (!code) {
       return message.reply({ embeds: [embed.error('Usage: `rack eval <code>`')] });

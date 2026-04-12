@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const embed = require('../../utils/embed');
-const { addBalance, removeBalance, addChips, removeChips, deposit, withdraw } = require('../../utils/economy');
+const { addBalance, removeBalance, addChips, removeChips } = require('../../utils/economy');
 const User = require('../../models/User');
 
 module.exports = {
