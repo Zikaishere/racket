@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const embed = require('../../utils/embed');
 const { getUser, fmt } = require('../../utils/economy');
 const { DAILY_COOLDOWN, WORK_COOLDOWN, ROB_COOLDOWN } = require('../../config');
+const { getGuildCooldownMs } = require('../../utils/guildCooldowns');
 
 function formatRemaining(targetDate, cooldown) {
   const last = targetDate ? new Date(targetDate).getTime() : 0;
@@ -31,7 +32,9 @@ function formatDuration(ms) {
   return `${minutes}m`;
 }
 
-const run = async ({ userId, guildId, targetUser, reply }) => {
+const run = async ({ userId, guildId, targetUser, reply, guildData }) => {
+  const workCooldown = getGuildCooldownMs(guildData, 'work') || WORK_COOLDOWN;
+  const robCooldown = getGuildCooldownMs(guildData, 'rob') || ROB_COOLDOWN;
   const user = await getUser(userId, guildId);
   const titleName = targetUser ? `${targetUser.username}'s` : 'Your';
   const winRate =
@@ -64,8 +67,8 @@ const run = async ({ userId, guildId, targetUser, reply }) => {
       inline: true,
     },
     { name: 'Daily', value: formatRemaining(user.lastDaily, DAILY_COOLDOWN), inline: true },
-    { name: 'Work', value: formatRemaining(user.lastWork, WORK_COOLDOWN), inline: true },
-    { name: 'Rob', value: formatRemaining(user.lastRob, ROB_COOLDOWN), inline: true },
+    { name: 'Work', value: formatRemaining(user.lastWork, workCooldown), inline: true },
+    { name: 'Rob', value: formatRemaining(user.lastRob, robCooldown), inline: true },
   );
 
   if (user.moderation?.frozen) {
@@ -91,15 +94,21 @@ module.exports = {
     .setDescription('View your player profile')
     .addUserOption((o) => o.setName('user').setDescription('User to inspect').setRequired(false)),
 
-  async execute({ message }) {
+  async execute({ message, guildData }) {
     const target = message.mentions.users.first();
     const userId = target ? target.id : message.author.id;
-    return run({ userId, guildId: message.guild.id, targetUser: target, reply: (d) => message.reply(d) });
+    return run({ userId, guildId: message.guild.id, targetUser: target, reply: (d) => message.reply(d), guildData });
   },
 
-  async executeSlash({ interaction }) {
+  async executeSlash({ interaction, guildData }) {
     const target = interaction.options.getUser('user');
     const userId = target ? target.id : interaction.user.id;
-    return run({ userId, guildId: interaction.guild.id, targetUser: target, reply: (d) => interaction.reply(d) });
+    return run({
+      userId,
+      guildId: interaction.guild.id,
+      targetUser: target,
+      reply: (d) => interaction.reply(d),
+      guildData,
+    });
   },
 };

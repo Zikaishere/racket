@@ -3,7 +3,8 @@ const embed = require('../../utils/embed');
 const User = require('../../models/User');
 const { fmt } = require('../../utils/economy');
 const { logAudit } = require('../../utils/audit');
-const { WORK_MIN, WORK_MAX, WORK_COOLDOWN, WANTED_WORK_MULTIPLIER } = require('../../config');
+const { WORK_MIN, WORK_MAX, WANTED_WORK_MULTIPLIER } = require('../../config');
+const { getGuildCooldownMs } = require('../../utils/guildCooldowns');
 
 const JOBS = [
   'dealt cards at the casino',
@@ -18,7 +19,7 @@ const JOBS = [
   'picked pockets at a busy market',
 ];
 
-const run = async ({ userId, guildId, reply }) => {
+const run = async ({ userId, guildId, reply, cooldownMs }) => {
   const currentUser = await User.findOrCreate(userId, guildId);
 
   const earned = Math.floor(Math.random() * (WORK_MAX - WORK_MIN + 1)) + WORK_MIN;
@@ -28,7 +29,7 @@ const run = async ({ userId, guildId, reply }) => {
     {
       userId,
       guildId,
-      $or: [{ lastWork: null }, { lastWork: { $lte: new Date(Date.now() - WORK_COOLDOWN) } }],
+      $or: [{ lastWork: null }, { lastWork: { $lte: new Date(Date.now() - cooldownMs) } }],
     },
     {
       $set: { lastWork: new Date() },
@@ -39,7 +40,7 @@ const run = async ({ userId, guildId, reply }) => {
 
   if (!updated) {
     const user = await User.findOrCreate(userId, guildId);
-    const remaining = WORK_COOLDOWN - (Date.now() - new Date(user.lastWork).getTime());
+    const remaining = cooldownMs - (Date.now() - new Date(user.lastWork).getTime());
     const mins = Math.ceil(remaining / 60000);
     return reply({
       embeds: [embed.warning('Still Working', `You're still on the clock. Come back in **${mins}m**.`)],
@@ -80,15 +81,21 @@ module.exports = {
 
   slash: new SlashCommandBuilder().setName('work').setDescription('Work a job and earn some raqs'),
 
-  async execute({ message }) {
-    return run({ userId: message.author.id, guildId: message.guild.id, reply: (data) => message.reply(data) });
+  async execute({ message, guildData }) {
+    return run({
+      userId: message.author.id,
+      guildId: message.guild.id,
+      reply: (data) => message.reply(data),
+      cooldownMs: getGuildCooldownMs(guildData, 'work'),
+    });
   },
 
-  async executeSlash({ interaction }) {
+  async executeSlash({ interaction, guildData }) {
     return run({
       userId: interaction.user.id,
       guildId: interaction.guild.id,
       reply: (data) => interaction.reply(data),
+      cooldownMs: getGuildCooldownMs(guildData, 'work'),
     });
   },
 };

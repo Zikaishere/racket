@@ -1,13 +1,29 @@
 const embed = require('./embed');
 const Guild = require('../models/Guild');
-const { DEFAULT_PREFIX } = require('../config');
+const { DEFAULT_PREFIX, DAILY_COOLDOWN } = require('../config');
 const { buildSetupEmbed } = require('./setupMessage');
 const { logAudit } = require('./audit');
+const {
+  COOLDOWN_KEYS,
+  COOLDOWN_FIELD_BY_KEY,
+  DEFAULT_COOLDOWNS_MS,
+  COOLDOWN_LIMITS_MINUTES,
+  normalizeCooldownKey,
+  getGuildCooldownMs,
+  formatCooldown,
+  cooldownOverrideStatus,
+} = require('./guildCooldowns');
 
 const FEATURE_CHOICES = [
   { name: 'Casino', value: 'casino' },
   { name: 'Heist', value: 'heist' },
   { name: 'Black Market', value: 'blackmarket' },
+];
+
+const COOLDOWN_CHOICES = [
+  { name: 'Work', value: 'work' },
+  { name: 'Rob', value: 'rob' },
+  { name: 'Heist (base)', value: 'heist' },
 ];
 
 const CONFIG_CATEGORY_CHOICES = [
@@ -61,6 +77,15 @@ function buildStatusEmbed(guildData) {
     guildData.features?.heist === false ? null : 'heist',
     guildData.features?.blackmarket === false ? null : 'blackmarket',
   ].filter(Boolean);
+  const workCd = getGuildCooldownMs(guildData, 'work');
+  const robCd = getGuildCooldownMs(guildData, 'rob');
+  const heistCd = getGuildCooldownMs(guildData, 'heist');
+  const cooldownLines = [
+    `Daily: \`${formatCooldown(DAILY_COOLDOWN)}\` (fixed)`,
+    `Work: \`${formatCooldown(workCd)}\` (${cooldownOverrideStatus(guildData, 'work')})`,
+    `Rob: \`${formatCooldown(robCd)}\` (${cooldownOverrideStatus(guildData, 'rob')})`,
+    `Heist Base: \`${formatCooldown(heistCd)}\` (${cooldownOverrideStatus(guildData, 'heist')})`,
+  ];
 
   return embed
     .raw(0x2b2d31)
@@ -81,6 +106,11 @@ function buildStatusEmbed(guildData) {
       {
         name: 'Disabled Commands',
         value: disabledCommands.length ? disabledCommands.map((name) => `\`${name}\``).join(', ') : 'None',
+        inline: false,
+      },
+      {
+        name: 'Cooldowns',
+        value: cooldownLines.join('\n'),
         inline: false,
       },
       {
@@ -175,6 +205,108 @@ async function setAdminRole(guildId, actorId, roleId, action) {
   );
 }
 
+function validateCooldownValue(key, minutes) {
+  const normalized = normalizeCooldownKey(key);
+  if (!normalized) return { ok: false, error: 'Invalid cooldown type. Use work, rob, or heist.' };
+  const parsed = Number(minutes);
+  if (!Number.isInteger(parsed)) return { ok: false, error: 'Cooldown minutes must be a whole number.' };
+  const limits = COOLDOWN_LIMITS_MINUTES[normalized];
+  if (parsed < limits.min || parsed > limits.max) {
+    return {
+      ok: false,
+      error: `${normalized} cooldown must be between ${limits.min} and ${limits.max} minutes.`,
+    };
+  }
+  return { ok: true, key: normalized, minutes: parsed };
+}
+
+async function setCooldown(guildId, actorId, cooldownKey, minutes) {
+  const validation = validateCooldownValue(cooldownKey, minutes);
+  if (!validation.ok) return embed.error(validation.error);
+
+  const field = COOLDOWN_FIELD_BY_KEY[validation.key];
+  const ms = validation.minutes * 60000;
+  await Guild.findOneAndUpdate(
+    { guildId },
+    { $set: { [`cooldowns.${field}`]: ms }, $setOnInsert: { guildId } },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  );
+  await logAudit({
+    guildId,
+    actorId,
+    action: 'config_set_cooldown',
+    metadata: { cooldown: validation.key, minutes: validation.minutes },
+  });
+  return embed.success(
+    'Config Updated',
+    `${validation.key} cooldown is now **${formatCooldown(ms)}** for this server.`,
+  );
+}
+
+async function resetCooldown(guildId, actorId, cooldownKey = 'all') {
+  const normalized = `${cooldownKey || 'all'}`.toLowerCase();
+  const update =
+    normalized === 'all'
+      ? {
+          $set: {
+            'cooldowns.workMs': null,
+            'cooldowns.robMs': null,
+            'cooldowns.heistBaseMs': null,
+          },
+          $setOnInsert: { guildId },
+        }
+      : null;
+
+  if (!update) {
+    const key = normalizeCooldownKey(normalized);
+    if (!key) return embed.error('Invalid cooldown type. Use work, rob, heist, or all.');
+    const field = COOLDOWN_FIELD_BY_KEY[key];
+    await Guild.findOneAndUpdate(
+      { guildId },
+      { $set: { [`cooldowns.${field}`]: null }, $setOnInsert: { guildId } },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+    await logAudit({
+      guildId,
+      actorId,
+      action: 'config_reset_cooldown',
+      metadata: { cooldown: key },
+    });
+    return embed.success(
+      'Config Updated',
+      `${key} cooldown reverted to default (${formatCooldown(DEFAULT_COOLDOWNS_MS[key])}).`,
+    );
+  }
+
+  await Guild.findOneAndUpdate({ guildId }, update, { upsert: true, new: true, setDefaultsOnInsert: true });
+  await logAudit({
+    guildId,
+    actorId,
+    action: 'config_reset_cooldown',
+    metadata: { cooldown: 'all' },
+  });
+  return embed.success('Config Updated', 'All customizable cooldowns were reset to defaults.');
+}
+
+function buildCooldownStatusEmbed(guildData) {
+  const workCd = getGuildCooldownMs(guildData, 'work');
+  const robCd = getGuildCooldownMs(guildData, 'rob');
+  const heistCd = getGuildCooldownMs(guildData, 'heist');
+  return embed
+    .raw(0x2b2d31)
+    .setTitle('Server Cooldowns')
+    .setDescription(
+      [
+        `Daily: \`${formatCooldown(DAILY_COOLDOWN)}\` (fixed)`,
+        `Work: \`${formatCooldown(workCd)}\` (${cooldownOverrideStatus(guildData, 'work')})`,
+        `Rob: \`${formatCooldown(robCd)}\` (${cooldownOverrideStatus(guildData, 'rob')})`,
+        `Heist Base: \`${formatCooldown(heistCd)}\` (${cooldownOverrideStatus(guildData, 'heist')})`,
+        '',
+        'Use `.config cooldown set <work|rob|heist> <minutes>` to customize.',
+      ].join('\n'),
+    );
+}
+
 async function resetConfig(guildId, actorId) {
   await Guild.findOneAndUpdate(
     { guildId },
@@ -186,6 +318,9 @@ async function resetConfig(guildId, actorId) {
         'features.blackmarket': true,
         adminRoles: [],
         disabledCommands: [],
+        'cooldowns.workMs': null,
+        'cooldowns.robMs': null,
+        'cooldowns.heistBaseMs': null,
       },
       $setOnInsert: { guildId },
     },
@@ -194,7 +329,7 @@ async function resetConfig(guildId, actorId) {
   await logAudit({ guildId, actorId, action: 'config_reset' });
   return embed.success(
     'Config Reset',
-    'Prefix, feature toggles, admin roles, and disabled commands were reset to defaults.',
+    'Prefix, feature toggles, admin roles, disabled commands, and cooldown overrides were reset to defaults.',
   );
 }
 
@@ -216,7 +351,7 @@ function buildConfigOverviewEmbed(prefix) {
       },
       {
         name: 'Server Settings',
-        value: `\`${prefix}setprefix <newPrefix>\`\n\`${prefix}adminrole add @Role\`\n\`${prefix}resetconfig\``,
+        value: `\`${prefix}setprefix <newPrefix>\`\n\`${prefix}adminrole add @Role\`\n\`${prefix}config cooldown view\`\n\`${prefix}resetconfig\``,
         inline: true,
       },
     );
@@ -224,6 +359,8 @@ function buildConfigOverviewEmbed(prefix) {
 
 module.exports = {
   FEATURE_CHOICES,
+  COOLDOWN_CHOICES,
+  COOLDOWN_KEYS,
   CONFIG_CATEGORY_CHOICES,
   PROTECTED_COMMANDS,
   resolveCommand,
@@ -236,6 +373,9 @@ module.exports = {
   setFeature,
   setCommandState,
   setAdminRole,
+  setCooldown,
+  resetCooldown,
   resetConfig,
+  buildCooldownStatusEmbed,
   buildConfigOverviewEmbed,
 };

@@ -4,6 +4,7 @@ const { getUser, fmt } = require('../../utils/economy');
 const _User = require('../../models/User');
 const Crew = require('../../models/Crew');
 const { reserveFunds, refundReservations, settleReservationsByGameKey } = require('../../utils/gameFunds');
+const { getGuildCooldownMs } = require('../../utils/guildCooldowns');
 const {
   HEIST_MIN_PLAYERS,
   HEIST_JOIN_WINDOW,
@@ -276,6 +277,7 @@ async function resolveHeist(guildId, _client) {
   if (heist.timeout) clearTimeout(heist.timeout);
 
   const now = Date.now();
+  const baseCooldownMs = heist.baseCooldownMs || HEIST_BASE_COOLDOWN;
   const entry = heist.entryOptions[heist.selectedEntryIndex];
   const strategy = STRATEGIES[heist.strategy];
   const crewEntries = [...heist.crew.entries()];
@@ -323,7 +325,7 @@ async function resolveHeist(guildId, _client) {
       user.wallet += payout;
       user.stats.heistsJoined += 1;
       user.stats.heistsWon += 1;
-      user.heistCooldownUntil = new Date(now + HEIST_BASE_COOLDOWN);
+      user.heistCooldownUntil = new Date(now + baseCooldownMs);
       appendHeistHistory(user, {
         target: heist.target.name,
         outcome: 'success',
@@ -380,7 +382,7 @@ async function resolveHeist(guildId, _client) {
     let refund = 0;
     let seizure = 0;
     let extraLoss = 0;
-    let cooldownMs = Math.max(HEIST_BASE_COOLDOWN, heat.cooldownMs);
+    let cooldownMs = Math.max(baseCooldownMs, heat.cooldownMs);
     let wantedApplied = true;
     let heatLabel = heat.name;
 
@@ -459,7 +461,7 @@ async function resolveHeist(guildId, _client) {
   await editHeistMessage(heist, { embeds: [failEmbed], components: buildControls(heist, true) });
 }
 
-const run = async ({ userId, guildId, username, bet, reply, client }) => {
+const run = async ({ userId, guildId, username, bet, reply, client, baseCooldownMs }) => {
   if (activeHeists.has(guildId)) {
     return reply({
       embeds: [
@@ -544,6 +546,7 @@ const run = async ({ userId, guildId, username, bet, reply, client }) => {
     entryOptions: shuffle(ENTRY_POINTS),
     selectedEntryIndex: 0,
     scoped: false,
+    baseCooldownMs,
     gameKey,
     timeout: null,
     message: null,
@@ -580,7 +583,7 @@ module.exports = {
         .setMaxValue(HEIST_MAX_BET),
     ),
 
-  async execute({ message, args, client }) {
+  async execute({ message, args, client, guildData }) {
     return run({
       userId: message.author.id,
       guildId: message.guild.id,
@@ -588,10 +591,11 @@ module.exports = {
       bet: parseInt(args[0], 10),
       reply: (data) => message.reply(data),
       client,
+      baseCooldownMs: getGuildCooldownMs(guildData, 'heist'),
     });
   },
 
-  async executeSlash({ interaction, client: _client }) {
+  async executeSlash({ interaction, client: _client, guildData }) {
     return run({
       userId: interaction.user.id,
       guildId: interaction.guild.id,
@@ -599,6 +603,7 @@ module.exports = {
       bet: interaction.options.getInteger('bet'),
       reply: (data) => interaction.reply({ ...data, fetchReply: true }),
       client: _client,
+      baseCooldownMs: getGuildCooldownMs(guildData, 'heist'),
     });
   },
 

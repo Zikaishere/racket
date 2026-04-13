@@ -14,6 +14,11 @@ const guildSchema = new mongoose.Schema({
   // Admin roles that can use admin commands
   adminRoles: [String],
   disabledCommands: [{ type: String }],
+  cooldowns: {
+    workMs: { type: Number, default: null },
+    robMs: { type: Number, default: null },
+    heistBaseMs: { type: Number, default: null },
+  },
 
   createdAt: { type: Date, default: Date.now },
 });

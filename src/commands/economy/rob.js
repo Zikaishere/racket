@@ -2,16 +2,17 @@ const { SlashCommandBuilder } = require('discord.js');
 const embed = require('../../utils/embed');
 const { getUser, fmt } = require('../../utils/economy');
 const { logAudit } = require('../../utils/audit');
-const { ROB_COOLDOWN, ROB_SUCCESS_RATE, ROB_FINE_PERCENT, ROB_MIN_BAL } = require('../../config');
+const { ROB_SUCCESS_RATE, ROB_FINE_PERCENT, ROB_MIN_BAL } = require('../../config');
+const { getGuildCooldownMs } = require('../../utils/guildCooldowns');
 
-const run = async ({ userId, guildId, targetUser, reply }) => {
+const run = async ({ userId, guildId, targetUser, reply, cooldownMs }) => {
   if (!targetUser) return reply({ embeds: [embed.error('Please mention a user to rob.')], ephemeral: true });
   if (targetUser.id === userId) return reply({ embeds: [embed.error('You cannot rob yourself.')], ephemeral: true });
   if (targetUser.bot) return reply({ embeds: [embed.error('You cannot rob bots.')], ephemeral: true });
 
   const attacker = await getUser(userId, guildId);
   const last = attacker.lastRob ? new Date(attacker.lastRob).getTime() : 0;
-  const remaining = ROB_COOLDOWN - (Date.now() - last);
+  const remaining = cooldownMs - (Date.now() - last);
 
   if (remaining > 0) {
     const hours = Math.floor(remaining / 3600000);
@@ -94,23 +95,25 @@ module.exports = {
     .setDescription('Try to rob raqs from another user')
     .addUserOption((o) => o.setName('user').setDescription('User to rob').setRequired(true)),
 
-  async execute({ message }) {
+  async execute({ message, guildData }) {
     const target = message.mentions.users.first();
     return run({
       userId: message.author.id,
       guildId: message.guild.id,
       targetUser: target,
       reply: (data) => message.reply(data),
+      cooldownMs: getGuildCooldownMs(guildData, 'rob'),
     });
   },
 
-  async executeSlash({ interaction }) {
+  async executeSlash({ interaction, guildData }) {
     const target = interaction.options.getUser('user');
     return run({
       userId: interaction.user.id,
       guildId: interaction.guild.id,
       targetUser: target,
       reply: (data) => interaction.reply(data),
+      cooldownMs: getGuildCooldownMs(guildData, 'rob'),
     });
   },
 };

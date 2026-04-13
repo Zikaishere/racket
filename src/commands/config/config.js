@@ -8,15 +8,20 @@ const {
   setFeature,
   setCommandState,
   setAdminRole,
+  setCooldown,
+  resetCooldown,
   resetConfig,
   FEATURE_CHOICES,
+  COOLDOWN_CHOICES,
+  COOLDOWN_KEYS,
+  buildCooldownStatusEmbed,
 } = require('../../utils/configTools');
 
 module.exports = {
   name: 'config',
   aliases: ['cfg', 'settings'],
   description: 'Manage server configuration settings.',
-  usage: '<view|prefix|feature|command|adminrole|reset> [options]',
+  usage: '<view|prefix|feature|command|adminrole|cooldown|reset> [options]',
   category: 'config',
   guildOnly: true,
   adminOnly: true,
@@ -65,12 +70,44 @@ module.exports = {
             .addChoices({ name: 'Add', value: 'add' }, { name: 'Remove', value: 'remove' }),
         ),
     )
+    .addSubcommand((sub) =>
+      sub
+        .setName('cooldown')
+        .setDescription('View, set, or reset server cooldown overrides')
+        .addStringOption((opt) =>
+          opt
+            .setName('action')
+            .setDescription('Action to apply')
+            .setRequired(true)
+            .addChoices(
+              { name: 'View', value: 'view' },
+              { name: 'Set', value: 'set' },
+              { name: 'Reset', value: 'reset' },
+            ),
+        )
+        .addStringOption((opt) =>
+          opt
+            .setName('cooldown')
+            .setDescription('Cooldown target (daily is fixed and not customizable)')
+            .setRequired(false)
+            .addChoices(...COOLDOWN_CHOICES, { name: 'All', value: 'all' }),
+        )
+        .addIntegerOption((opt) =>
+          opt
+            .setName('minutes')
+            .setDescription('Cooldown value in minutes (set action only)')
+            .setRequired(false)
+            .setMinValue(1),
+        ),
+    )
     .addSubcommand((sub) => sub.setName('reset').setDescription('Reset entire server configuration to defaults')),
 
   async execute({ message, args, client, guildData }) {
     if (!args.length)
       return message.reply({
-        embeds: [embed.error('Please specify a sub-command (view, prefix, feature, command, adminrole, reset).')],
+        embeds: [
+          embed.error('Please specify a sub-command (view, prefix, feature, command, adminrole, cooldown, reset).'),
+        ],
       });
 
     const sub = args[0].toLowerCase();
@@ -121,6 +158,37 @@ module.exports = {
       return message.reply({ embeds: [await setAdminRole(message.guild.id, message.author.id, role.id, action)] });
     }
 
+    if (sub === 'cooldown') {
+      const action = args[1]?.toLowerCase();
+      const cooldown = args[2]?.toLowerCase();
+      const minutesArg = args[3];
+
+      if (!action || !['view', 'set', 'reset'].includes(action)) {
+        return message.reply({
+          embeds: [embed.error('Usage: `.config cooldown <view|set|reset> [work|rob|heist|all] [minutes]`')],
+        });
+      }
+
+      if (action === 'view') {
+        const latest = await getGuildConfig(message.guild.id);
+        return message.reply({ embeds: [buildCooldownStatusEmbed(latest)] });
+      }
+
+      if (action === 'set') {
+        if (!cooldown || !COOLDOWN_KEYS.includes(cooldown) || !minutesArg) {
+          return message.reply({
+            embeds: [embed.error('Usage: `.config cooldown set <work|rob|heist> <minutes>`')],
+          });
+        }
+        return message.reply({
+          embeds: [await setCooldown(message.guild.id, message.author.id, cooldown, Number(minutesArg))],
+        });
+      }
+
+      const target = cooldown || 'all';
+      return message.reply({ embeds: [await resetCooldown(message.guild.id, message.author.id, target)] });
+    }
+
     if (sub === 'reset') {
       return message.reply({ embeds: [await resetConfig(message.guild.id, message.author.id)] });
     }
@@ -167,6 +235,36 @@ module.exports = {
       const action = interaction.options.getString('action');
       return interaction.reply({
         embeds: [await setAdminRole(interaction.guild.id, interaction.user.id, role.id, action)],
+        ephemeral: true,
+      });
+    }
+
+    if (sub === 'cooldown') {
+      const action = interaction.options.getString('action');
+      const cooldown = interaction.options.getString('cooldown');
+      const minutes = interaction.options.getInteger('minutes');
+
+      if (action === 'view') {
+        const latest = await getGuildConfig(interaction.guild.id);
+        return interaction.reply({ embeds: [buildCooldownStatusEmbed(latest)], ephemeral: true });
+      }
+
+      if (action === 'set') {
+        if (!cooldown || !COOLDOWN_KEYS.includes(cooldown) || typeof minutes !== 'number') {
+          return interaction.reply({
+            embeds: [embed.error('For set: choose cooldown as work/rob/heist and provide minutes.')],
+            ephemeral: true,
+          });
+        }
+        return interaction.reply({
+          embeds: [await setCooldown(interaction.guild.id, interaction.user.id, cooldown, minutes)],
+          ephemeral: true,
+        });
+      }
+
+      const target = cooldown || 'all';
+      return interaction.reply({
+        embeds: [await resetCooldown(interaction.guild.id, interaction.user.id, target)],
         ephemeral: true,
       });
     }
