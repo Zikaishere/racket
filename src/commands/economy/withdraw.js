@@ -23,7 +23,7 @@ const run = async ({ userId, guildId, rawAmount, reply }) => {
     embeds: [
       embed.success(
         'Withdrawal Successful',
-        `You withdrew ${fmt(amount)} from your bank.\n\n**Wallet:** ${fmt(updated.balance)}\n**Bank:** ${fmt(updated.bank)}`,
+        `You withdrew ${fmt(amount)} from your bank.\n\n**Wallet:** ${fmt(updated.wallet)}\n**Bank:** ${fmt(updated.bank)}`,
       ),
     ],
   });

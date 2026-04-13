@@ -24,7 +24,7 @@ const run = async ({ userId, guildId, targetUser, reply }) => {
   }
 
   const victim = await getUser(targetUser.id, guildId);
-  if (victim.balance < ROB_MIN_BAL) {
+  if (victim.wallet < ROB_MIN_BAL) {
     return reply({
       embeds: [embed.error(`${targetUser.username} is too poor to rob. They need at least ${fmt(ROB_MIN_BAL)}.`)],
     });
@@ -35,10 +35,10 @@ const run = async ({ userId, guildId, targetUser, reply }) => {
 
   if (success) {
     const percentage = 0.05 + Math.random() * 0.15;
-    const stolen = Math.max(1, Math.floor(victim.balance * percentage));
+    const stolen = Math.max(1, Math.floor(victim.wallet * percentage));
 
-    victim.balance -= stolen;
-    attacker.balance += stolen;
+    victim.wallet -= stolen;
+    attacker.wallet += stolen;
     attacker.totalEarned += stolen;
     await victim.save();
     await attacker.save();
@@ -58,10 +58,10 @@ const run = async ({ userId, guildId, targetUser, reply }) => {
     });
   }
 
-  const fine = Math.floor(victim.balance * ROB_FINE_PERCENT);
-  const actualFine = Math.min(attacker.balance, fine);
-  attacker.balance -= actualFine;
-  victim.balance += actualFine;
+  const fine = Math.floor(victim.wallet * ROB_FINE_PERCENT);
+  const actualFine = Math.min(attacker.wallet, fine);
+  attacker.wallet -= actualFine;
+  victim.wallet += actualFine;
   await victim.save();
   await attacker.save();
 

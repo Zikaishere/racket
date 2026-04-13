@@ -39,7 +39,7 @@ const run = async ({ userId, guildId, targetUser, reply }) => {
   const wantedRemaining = user.wantedUntil ? Math.max(0, new Date(user.wantedUntil).getTime() - Date.now()) : 0;
 
   const e = embed.economy(`Profile: ${titleName} Empire`, null).addFields(
-    { name: 'Wallet', value: fmt(user.balance), inline: true },
+    { name: 'Wallet', value: fmt(user.wallet), inline: true },
     { name: 'Bank', value: fmt(user.bank), inline: true },
     { name: 'Chips', value: `**${user.chips.toLocaleString()}**`, inline: true },
     { name: 'Rank', value: user.casinoRank, inline: true },

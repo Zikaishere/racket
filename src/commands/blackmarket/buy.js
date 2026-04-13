@@ -87,11 +87,11 @@ const run = async ({ userId, guildId, listingId, quantity, reply }) => {
         { new: true, upsert: true, setDefaultsOnInsert: true, session },
       );
 
-      if (buyer.balance < totalCost) {
+      if (buyer.wallet < totalCost) {
         throw new Error('INSUFFICIENT_FUNDS');
       }
 
-      buyer.balance -= totalCost;
+      buyer.wallet -= totalCost;
       buyer.inventory = addInventoryItem([...buyer.inventory], lockedListing, desiredQuantity);
       await buyer.save({ session });
 
@@ -99,7 +99,7 @@ const run = async ({ userId, guildId, listingId, quantity, reply }) => {
         { userId: lockedListing.sellerId, guildId },
         {
           $setOnInsert: { userId: lockedListing.sellerId, guildId },
-          $inc: { balance: totalCost, 'stats.blackmarketSales': desiredQuantity },
+          $inc: { wallet: totalCost, balance: totalCost, 'stats.blackmarketSales': desiredQuantity },
         },
         { new: true, upsert: true, setDefaultsOnInsert: true, session },
       );
@@ -125,7 +125,7 @@ const run = async ({ userId, guildId, listingId, quantity, reply }) => {
     if (error.message === 'INSUFFICIENT_FUNDS') {
       const buyer = await User.findOrCreate(userId, guildId);
       return reply({
-        embeds: [embed.error(`You need ${fmt(totalCost)} to buy that quantity. Your balance: ${fmt(buyer.balance)}`)],
+        embeds: [embed.error(`You need ${fmt(totalCost)} to buy that quantity. Your wallet: ${fmt(buyer.wallet)}`)],
         ephemeral: true,
       });
     }
@@ -155,7 +155,7 @@ const run = async ({ userId, guildId, listingId, quantity, reply }) => {
     embeds: [
       embed.success(
         'Purchase Complete',
-        `You bought **${listing.itemName}** x${desiredQuantity} for ${fmt(totalCost)}.\n\nNew balance: ${fmt(updatedBuyer.balance)}`,
+        `You bought **${listing.itemName}** x${desiredQuantity} for ${fmt(totalCost)}.\n\nNew wallet: ${fmt(updatedBuyer.wallet)}`,
       ),
     ],
   });

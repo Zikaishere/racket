@@ -30,7 +30,7 @@ function buildLobbyEmbed(user, guildId) {
     .raw(0x1b1b1b)
     .setTitle('Racket Casino - Grand Lobby')
     .setDescription(
-      `Welcome back to the floor.\n\n**Wallet:** ${fmt(user.balance)}\n**Chips:** **${user.chips.toLocaleString()}**`,
+      `Welcome back to the floor.\n\n**Wallet:** ${fmt(user.wallet)}\n**Chips:** **${user.chips.toLocaleString()}**`,
     )
     .addFields(
       { name: 'Rank', value: user.casinoRank, inline: true },
@@ -119,7 +119,7 @@ module.exports = {
         .raw(0x2dc653)
         .setTitle('Casino Cashier')
         .setDescription(
-          '"Looking to buy chips or cash out?"\n\n- **Buy Chips**: \`/cashier buy <amount>\`\n- **Cash Out**: \`/cashier cashout <amount>\`\n\nCashouts above 5,000 chips are taxed unless you try to evade it.',
+          '"Looking to buy chips or cash out?"\n\n- **Buy Chips**: `/cashier buy <amount>`\n- **Cash Out**: `/cashier cashout <amount>`\n\nCashouts above 5,000 chips are taxed unless you try to evade it.',
         );
     } else if (selected === 'tables') {
       lobbyEmbed = buildTablesEmbed(interaction.guild.id);
@@ -128,7 +128,7 @@ module.exports = {
         .raw(0xffb703)
         .setTitle('Slots and Arcade Area')
         .setDescription(
-          'Flashing lights and bad decisions everywhere.\n\n- **Slots**: \`/slots <bet>\`\n- **Vault Crack**: \`/vault <bet>\`',
+          'Flashing lights and bad decisions everywhere.\n\n- **Slots**: `/slots <bet>`\n- **Vault Crack**: `/vault <bet>`',
         );
     } else if (selected === 'vip') {
       if (!['VIP', 'Whale'].includes(user.casinoRank)) {

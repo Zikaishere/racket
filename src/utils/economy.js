@@ -9,48 +9,44 @@ async function getUser(userId, guildId) {
   return User.findOrCreate(userId, guildId);
 }
 
-async function addBalance(userId, guildId, amount) {
-  const user = await User.findOneAndUpdate(
-    { userId, guildId },
-    {
-      $setOnInsert: { userId, guildId },
-      $inc: {
-        balance: amount,
-        totalEarned: amount > 0 ? amount : 0,
-      },
-    },
-    { upsert: true, new: true, setDefaultsOnInsert: true },
-  );
-  return user.balance;
+async function addWallet(userId, guildId, amount) {
+  const user = await getUser(userId, guildId);
+  user.wallet += amount;
+  user.balance = user.wallet;
+  if (amount > 0) {
+    user.totalEarned += amount;
+  }
+  await user.save();
+  return user.wallet;
 }
 
-async function removeBalance(userId, guildId, amount) {
-  const user = await User.findOneAndUpdate(
-    { userId, guildId, balance: { $gte: amount } },
-    { $inc: { balance: -amount } },
-    { new: true },
-  );
-
-  if (!user) return false;
-  return user.balance;
+async function removeWallet(userId, guildId, amount) {
+  const user = await getUser(userId, guildId);
+  if (user.wallet < amount) return false;
+  user.wallet -= amount;
+  user.balance = user.wallet;
+  await user.save();
+  return user.wallet;
 }
 
 async function deposit(userId, guildId, amount) {
-  const result = await User.updateOne(
-    { userId, guildId, balance: { $gte: amount } },
-    { $inc: { balance: -amount, bank: amount } },
-  );
-
-  return result.modifiedCount === 1;
+  const user = await getUser(userId, guildId);
+  if (user.wallet < amount) return false;
+  user.wallet -= amount;
+  user.balance = user.wallet;
+  user.bank += amount;
+  await user.save();
+  return true;
 }
 
 async function withdraw(userId, guildId, amount) {
-  const result = await User.updateOne(
-    { userId, guildId, bank: { $gte: amount } },
-    { $inc: { bank: -amount, balance: amount } },
-  );
-
-  return result.modifiedCount === 1;
+  const user = await getUser(userId, guildId);
+  if (user.bank < amount) return false;
+  user.bank -= amount;
+  user.wallet += amount;
+  user.balance = user.wallet;
+  await user.save();
+  return true;
 }
 
 async function addChips(userId, guildId, amount) {
@@ -74,27 +70,23 @@ async function removeChips(userId, guildId, amount) {
 }
 
 async function transfer(fromId, toId, guildId, amount) {
-  const debitResult = await User.updateOne(
-    { userId: fromId, guildId, balance: { $gte: amount } },
-    { $inc: { balance: -amount } },
-  );
+  const sender = await getUser(fromId, guildId);
+  if (sender.wallet < amount) return false;
 
-  if (debitResult.modifiedCount !== 1) {
-    return false;
-  }
-
-  await User.findOneAndUpdate(
-    { userId: toId, guildId },
-    { $setOnInsert: { userId: toId, guildId }, $inc: { balance: amount, totalEarned: amount } },
-    { upsert: true, new: true, setDefaultsOnInsert: true },
-  );
-
+  const recipient = await getUser(toId, guildId);
+  sender.wallet -= amount;
+  sender.balance = sender.wallet;
+  recipient.wallet += amount;
+  recipient.balance = recipient.wallet;
+  recipient.totalEarned += amount;
+  await sender.save();
+  await recipient.save();
   return true;
 }
 
-async function hasBalance(userId, guildId, amount) {
+async function hasWallet(userId, guildId, amount) {
   const user = await getUser(userId, guildId);
-  return user.balance >= amount;
+  return user.wallet >= amount;
 }
 
 async function hasChips(userId, guildId, amount) {
@@ -153,15 +145,18 @@ async function recordGame(userId, guildId, won, wagered) {
 
 module.exports = {
   fmt,
-  addBalance,
-  removeBalance,
+  addWallet,
+  removeWallet,
   deposit,
   withdraw,
   addChips,
   removeChips,
   transfer,
   getUser,
-  hasBalance,
+  hasWallet,
   hasChips,
   recordGame,
+  addBalance: addWallet,
+  removeBalance: removeWallet,
+  hasBalance: hasWallet,
 };

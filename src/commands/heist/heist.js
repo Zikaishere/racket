@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const embed = require('../../utils/embed');
 const { getUser, fmt } = require('../../utils/economy');
-const User = require('../../models/User');
+const _User = require('../../models/User');
 const Crew = require('../../models/Crew');
 const { reserveFunds, refundReservations, settleReservationsByGameKey } = require('../../utils/gameFunds');
 const {
@@ -269,7 +269,7 @@ function getRoleBonuses(heist) {
   return { counts, successBonus, crewSynergyBonus };
 }
 
-async function resolveHeist(guildId, client) {
+async function resolveHeist(guildId, _client) {
   const heist = activeHeists.get(guildId);
   if (!heist) return;
   activeHeists.delete(guildId);
@@ -320,7 +320,7 @@ async function resolveHeist(guildId, client) {
       const weight = member.role === 'Mastermind' ? 1.35 : 1;
       const payout = Math.max(1, Math.floor(totalReward * (weight / weights)));
       const user = await getUser(memberId, guildId);
-      user.balance += payout;
+      user.wallet += payout;
       user.stats.heistsJoined += 1;
       user.stats.heistsWon += 1;
       user.heistCooldownUntil = new Date(now + HEIST_BASE_COOLDOWN);
@@ -387,20 +387,20 @@ async function resolveHeist(guildId, client) {
     const driverEscaped = member.role === 'Driver' && Math.random() < 0.4;
     if (driverEscaped) {
       refund = Math.floor(heist.bet * 0.35);
-      user.balance += refund;
+      user.wallet += refund;
       cooldownMs = 0;
       wantedApplied = false;
       heatLabel = `${heat.name} (escaped)`;
     } else {
-      seizure = Math.floor(user.balance * heat.seizureRate);
+      seizure = Math.floor(user.wallet * heat.seizureRate);
       if (member.role === 'Enforcer') {
         extraLoss += Math.floor(heist.bet * 0.25);
       }
       if (member.role === 'Inside Man' && severityIndex >= 2) {
         extraLoss += heist.bet;
       }
-      const totalPenalty = Math.min(user.balance, seizure + extraLoss);
-      user.balance = Math.max(0, user.balance - totalPenalty);
+      const totalPenalty = Math.min(user.wallet, seizure + extraLoss);
+      user.wallet = Math.max(0, user.wallet - totalPenalty);
       if (cooldownMs > 0) {
         user.heistCooldownUntil = new Date(now + cooldownMs);
       }
@@ -493,9 +493,9 @@ const run = async ({ userId, guildId, username, bet, reply, client }) => {
     });
   }
 
-  if (user.balance < bet) {
+  if (user.wallet < bet) {
     return reply({
-      embeds: [embed.error(`You don't have enough raqs. Balance: ${fmt(user.balance)}`)],
+      embeds: [embed.error(`You don't have enough raqs. Wallet: ${fmt(user.wallet)}`)],
       ephemeral: true,
     });
   }
@@ -507,14 +507,14 @@ const run = async ({ userId, guildId, username, bet, reply, client }) => {
     guildId,
     game: 'heist',
     gameKey,
-    currency: 'balance',
+    currency: 'wallet',
     amount: bet,
     metadata: { username, target: target.name },
   });
 
   if (!reserved) {
     return reply({
-      embeds: [embed.error(`You don't have enough raqs. Balance: ${fmt(user.balance)}`)],
+      embeds: [embed.error(`You don't have enough raqs. Wallet: ${fmt(user.wallet)}`)],
       ephemeral: true,
     });
   }
@@ -591,14 +591,14 @@ module.exports = {
     });
   },
 
-  async executeSlash({ interaction, client }) {
+  async executeSlash({ interaction, client: _client }) {
     return run({
       userId: interaction.user.id,
       guildId: interaction.guild.id,
       username: interaction.user.username,
       bet: interaction.options.getInteger('bet'),
       reply: (data) => interaction.reply({ ...data, fetchReply: true }),
-      client,
+      client: _client,
     });
   },
 
@@ -631,7 +631,7 @@ module.exports = {
           ephemeral: true,
         });
       }
-      if (user.balance < heist.bet) {
+      if (user.wallet < heist.bet) {
         return interaction.reply({
           embeds: [embed.error(`You do not have enough raqs to join. Need: ${fmt(heist.bet)}`)],
           ephemeral: true,
@@ -643,7 +643,7 @@ module.exports = {
         guildId: interaction.guild.id,
         game: 'heist',
         gameKey: heist.gameKey,
-        currency: 'balance',
+        currency: 'wallet',
         amount: heist.bet,
         metadata: { username: interaction.user.username, target: heist.target.name },
       });

@@ -16,7 +16,7 @@ const run = async ({ userId, guildId, reply }) => {
     },
     {
       $set: { lastDaily: new Date() },
-      $inc: { balance: DAILY_AMOUNT, totalEarned: DAILY_AMOUNT },
+      $inc: { wallet: DAILY_AMOUNT, balance: DAILY_AMOUNT, totalEarned: DAILY_AMOUNT },
     },
     { new: true },
   );
@@ -47,7 +47,7 @@ const run = async ({ userId, guildId, reply }) => {
     embeds: [
       embed.success(
         'Daily Reward',
-        `You claimed your daily reward of ${fmt(DAILY_AMOUNT)}.\n\nNew balance: ${fmt(updated.balance)}`,
+        `You claimed your daily reward of ${fmt(DAILY_AMOUNT)}.\n\nNew wallet: ${fmt(updated.wallet)}`,
       ),
     ],
   });

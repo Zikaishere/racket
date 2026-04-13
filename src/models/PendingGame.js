@@ -5,7 +5,7 @@ const pendingGameSchema = new mongoose.Schema({
   guildId: { type: String, required: true },
   game: { type: String, required: true },
   gameKey: { type: String, required: true },
-  currency: { type: String, enum: ['balance', 'chips'], required: true },
+  currency: { type: String, enum: ['wallet', 'balance', 'chips'], required: true },
   amount: { type: Number, required: true, min: 1 },
   metadata: { type: Object, default: {} },
   createdAt: { type: Date, default: Date.now },

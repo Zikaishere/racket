@@ -32,7 +32,7 @@ const run = async ({ userId, guildId, reply }) => {
     },
     {
       $set: { lastWork: new Date() },
-      $inc: { balance: finalEarned, totalEarned: finalEarned },
+      $inc: { wallet: finalEarned, balance: finalEarned, totalEarned: finalEarned },
     },
     { new: true },
   );
@@ -64,7 +64,7 @@ const run = async ({ userId, guildId, reply }) => {
     embeds: [
       embed.success(
         'Work Complete',
-        `You ${job} and earned ${fmt(finalEarned)}.\n\nNew balance: ${fmt(updated.balance)}${penaltyText}`,
+        `You ${job} and earned ${fmt(finalEarned)}.\n\nNew cash: ${fmt(updated.wallet)}${penaltyText}`,
       ),
     ],
   });

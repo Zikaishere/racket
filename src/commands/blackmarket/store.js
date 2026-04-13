@@ -50,11 +50,11 @@ async function handleBuy(userId, guildId, itemId, quantity) {
   const totalCost = item.price * buyQuantity;
   const user = await getUser(userId, guildId);
 
-  if (user.balance < totalCost) {
-    return { error: `You need ${fmt(totalCost)} to buy that. Your balance: ${fmt(user.balance)}` };
+  if (user.wallet < totalCost) {
+    return { error: `You need ${fmt(totalCost)} to buy that. Your wallet: ${fmt(user.wallet)}` };
   }
 
-  user.balance -= totalCost;
+  user.wallet -= totalCost;
   for (let index = 0; index < buyQuantity; index += 1) {
     user.inventory.push(createInventoryItemFromStore(item));
   }
@@ -121,7 +121,7 @@ module.exports = {
         embeds: [
           embed.success(
             'Purchase Complete',
-            `You bought **${result.item.name}** x${result.buyQuantity} for ${fmt(result.totalCost)}.\n\nNew balance: ${fmt(result.user.balance)}`,
+            `You bought **${result.item.name}** x${result.buyQuantity} for ${fmt(result.totalCost)}.\n\nNew wallet: ${fmt(result.user.wallet)}`,
           ),
         ],
       });
@@ -156,7 +156,7 @@ module.exports = {
         embeds: [
           embed.success(
             'Purchase Complete',
-            `You bought **${result.item.name}** x${result.buyQuantity} for ${fmt(result.totalCost)}.\n\nNew balance: ${fmt(result.user.balance)}`,
+            `You bought **${result.item.name}** x${result.buyQuantity} for ${fmt(result.totalCost)}.\n\nNew wallet: ${fmt(result.user.wallet)}`,
           ),
         ],
       });

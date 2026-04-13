@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const embed = require('../../utils/embed');
-const { addBalance, removeBalance, addChips, removeChips } = require('../../utils/economy');
+const { addWallet, removeWallet, addChips, removeChips } = require('../../utils/economy');
 const User = require('../../models/User');
 
 module.exports = {
@@ -106,7 +106,7 @@ module.exports = {
     const reply = (c) => (isInteraction ? ctx.reply({ embeds: [c], ephemeral: true }) : ctx.reply({ embeds: [c] }));
 
     if (action === 'give') {
-      if (type === 'raqs') await addBalance(targetId, guildId, amount);
+      if (type === 'raqs') await addWallet(targetId, guildId, amount);
       if (type === 'chips') await addChips(targetId, guildId, amount);
       if (type === 'bank')
         await User.findOneAndUpdate({ userId: targetId, guildId }, { $inc: { bank: amount } }, { upsert: true });
@@ -119,7 +119,7 @@ module.exports = {
     }
 
     if (action === 'take') {
-      if (type === 'raqs') await removeBalance(targetId, guildId, amount);
+      if (type === 'raqs') await removeWallet(targetId, guildId, amount);
       if (type === 'chips') await removeChips(targetId, guildId, amount);
       if (type === 'bank')
         await User.findOneAndUpdate({ userId: targetId, guildId, bank: { $gte: amount } }, { $inc: { bank: -amount } });
@@ -133,7 +133,7 @@ module.exports = {
 
     if (action === 'set') {
       let updateDoc = {};
-      if (type === 'raqs') updateDoc = { balance: amount };
+      if (type === 'raqs') updateDoc = { wallet: amount, balance: amount };
       if (type === 'chips') updateDoc = { chips: amount };
       if (type === 'bank') updateDoc = { bank: amount };
 

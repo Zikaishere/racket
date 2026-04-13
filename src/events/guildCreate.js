@@ -49,14 +49,14 @@ module.exports = {
         .send({
           embeds: [buildSetupEmbed(guildData.prefix || DEFAULT_PREFIX)],
         })
-        .catch(() => {});
+        .catch((_error) => {});
     }
 
     let ownerId = 'Unknown';
     try {
       const owner = await guild.fetchOwner();
       ownerId = owner.id;
-    } catch (error) {
+    } catch {
       ownerId = guild.ownerId || 'Unknown';
     }
 

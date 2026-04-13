@@ -17,17 +17,17 @@ const run = async ({ userId, guildId, action, rawAmount, evade, reply }) => {
 
   if (action === 'buy') {
     const normalized = String(rawAmount).toLowerCase();
-    const amount = normalized === 'all' || normalized === 'max' ? user.balance : parseInt(rawAmount, 10);
+    const amount = normalized === 'all' || normalized === 'max' ? user.wallet : parseInt(rawAmount, 10);
 
     if (isNaN(amount) || amount <= 0)
       return reply({ embeds: [embed.error('Please specify a valid amount.')], ephemeral: true });
-    if (user.balance < amount)
+    if (user.wallet < amount)
       return reply({
-        embeds: [embed.error(`You don't have enough raqs.\n\nWallet: ${fmt(user.balance)}`)],
+        embeds: [embed.error(`You don't have enough raqs.\n\nWallet: ${fmt(user.wallet)}`)],
         ephemeral: true,
       });
 
-    user.balance -= amount;
+    user.wallet -= amount;
     user.chips += amount;
     await user.save();
     await logAudit({ guildId, actorId: userId, targetId: userId, action: 'cashier_buy', amount, currency: 'wallet' });
@@ -36,7 +36,7 @@ const run = async ({ userId, guildId, action, rawAmount, evade, reply }) => {
       embeds: [
         embed.success(
           'Chips Purchased',
-          `You bought **${amount.toLocaleString()}** chips.\n\nWallet: ${fmt(user.balance)}\nChips: **${user.chips.toLocaleString()}**`,
+          `You bought **${amount.toLocaleString()}** chips.\n\nWallet: ${fmt(user.wallet)}\nChips: **${user.chips.toLocaleString()}**`,
         ),
       ],
     });
@@ -77,7 +77,7 @@ const run = async ({ userId, guildId, action, rawAmount, evade, reply }) => {
         } else {
           const fineAmount = Math.floor(amount * EVADE_FINE_RATE);
           user.chips -= amount;
-          user.balance += amount - fineAmount;
+          user.wallet += amount - fineAmount;
           user.taxEvasionHistory.caught += 1;
           user.casinoBanEnds = new Date(Date.now() + 60 * 60 * 1000);
           await user.save();
@@ -105,7 +105,7 @@ const run = async ({ userId, guildId, action, rawAmount, evade, reply }) => {
 
     finalAmount = amount - taxAmount;
     user.chips -= amount;
-    user.balance += finalAmount;
+    user.wallet += finalAmount;
     await user.save();
     await logAudit({
       guildId,
@@ -121,7 +121,7 @@ const run = async ({ userId, guildId, action, rawAmount, evade, reply }) => {
       embeds: [
         embed.success(
           'Chips Cashed Out',
-          `You cashed out **${amount.toLocaleString()}** chips for **${fmt(finalAmount)}**.${taxMessage}\n\nWallet: ${fmt(user.balance)}\nChips: **${user.chips.toLocaleString()}**`,
+          `You cashed out **${amount.toLocaleString()}** chips for **${fmt(finalAmount)}**.${taxMessage}\n\nWallet: ${fmt(user.wallet)}\nChips: **${user.chips.toLocaleString()}**`,
         ),
       ],
     });

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const embed = require('../../utils/embed');
-const { DEFAULT_PREFIX } = require('../../config');
+const { DEFAULT_PREFIX: _DEFAULT_PREFIX } = require('../../config');
 const {
   getGuildConfig,
   buildStatusEmbed,

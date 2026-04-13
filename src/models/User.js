@@ -5,7 +5,8 @@ const userSchema = new mongoose.Schema({
   guildId: { type: String, required: true },
 
   // Economy
-  balance: { type: Number, default: 0 },
+  wallet: { type: Number, default: 0 },
+  balance: { type: Number, default: 0 }, // legacy mirror for older records during the rename
   bank: { type: Number, default: 0 },
   chips: { type: Number, default: 0 },
   totalEarned: { type: Number, default: 0 },
@@ -86,16 +87,40 @@ const userSchema = new mongoose.Schema({
 
 userSchema.index({ userId: 1, guildId: 1 }, { unique: true });
 
+userSchema.pre('init', function (doc) {
+  if (doc.wallet == null && doc.balance != null) {
+    doc.wallet = doc.balance;
+  }
+  if (doc.balance == null && doc.wallet != null) {
+    doc.balance = doc.wallet;
+  }
+});
+
+userSchema.pre('save', function (next) {
+  if (this.wallet == null && this.balance != null) {
+    this.wallet = this.balance;
+  }
+  this.balance = this.wallet || 0;
+  next();
+});
+
 userSchema.statics.findOrCreate = async function (userId, guildId) {
-  return this.findOneAndUpdate(
+  const user = await this.findOneAndUpdate(
     { userId, guildId },
-    { $setOnInsert: { userId, guildId } },
+    { $setOnInsert: { userId, guildId, wallet: 0, balance: 0 } },
     {
       new: true,
       upsert: true,
       setDefaultsOnInsert: true,
     },
   );
+
+  if (user.wallet == null && user.balance != null) {
+    user.wallet = user.balance;
+    await user.save();
+  }
+
+  return user;
 };
 
 module.exports = mongoose.model('User', userSchema);

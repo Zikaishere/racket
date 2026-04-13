@@ -47,7 +47,7 @@ const run = async ({ userId, guildId, itemName, itemDesc, price, quantity, reply
   }
 
   const user = await getUser(userId, guildId);
-  if (user.balance < BLACKMARKET_LISTING_FEE) {
+  if (user.wallet < BLACKMARKET_LISTING_FEE) {
     return reply({
       embeds: [embed.error(`You need ${fmt(BLACKMARKET_LISTING_FEE)} to post a listing (listing fee).`)],
       ephemeral: true,
@@ -68,7 +68,7 @@ const run = async ({ userId, guildId, itemName, itemDesc, price, quantity, reply
     });
   }
 
-  user.balance -= BLACKMARKET_LISTING_FEE;
+  user.wallet -= BLACKMARKET_LISTING_FEE;
   await user.save();
 
   const listing = await BlackMarket.create({

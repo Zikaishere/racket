@@ -14,7 +14,7 @@ const FEATURE_CHOICES = [
 const ADMIN_OVERVIEW_COMMANDS = [
   'give @user <amount>',
   'take @user <amount>',
-  'setbalance @user <amount>',
+  'setwallet @user <amount>',
   'setbank @user <amount>',
   'setchips @user <amount>',
   'resetuser @user',
@@ -44,7 +44,7 @@ async function buildStatusEmbed(guildId, target) {
     .setTitle(`Admin Status: ${target.username}`)
     .setDescription(`<@${target.id}>`)
     .addFields(
-      { name: 'Wallet', value: fmt(user.balance), inline: true },
+      { name: 'Wallet', value: fmt(user.wallet), inline: true },
       { name: 'Bank', value: fmt(user.bank), inline: true },
       { name: 'Chips', value: user.chips.toLocaleString(), inline: true },
       { name: 'Frozen', value: user.moderation?.frozen ? 'Yes' : 'No', inline: true },
@@ -79,7 +79,8 @@ async function buildAuditEmbed(guildId, limit) {
 
 async function handleGive(guildId, actorId, target, amount) {
   const user = await getUser(target.id, guildId);
-  user.balance += amount;
+  user.wallet += amount;
+  user.balance = user.wallet;
   await user.save();
   await logAudit({ guildId, actorId, targetId: target.id, action: 'admin_give', amount, currency: 'wallet' });
   return embed.success('Done', `Gave ${fmt(amount)} to <@${target.id}>.`);
@@ -87,7 +88,8 @@ async function handleGive(guildId, actorId, target, amount) {
 
 async function handleTake(guildId, actorId, target, amount) {
   const user = await getUser(target.id, guildId);
-  user.balance = Math.max(0, user.balance - amount);
+  user.wallet = Math.max(0, user.wallet - amount);
+  user.balance = user.wallet;
   await user.save();
   await logAudit({ guildId, actorId, targetId: target.id, action: 'admin_take', amount, currency: 'wallet' });
   return embed.success('Done', `Took ${fmt(amount)} from <@${target.id}>.`);
@@ -104,18 +106,18 @@ async function handleSetField(guildId, actorId, target, field, amount) {
     amount: safeAmount,
     currency: field,
   });
-  const label = field === 'balance' ? 'wallet' : field;
+  const label = field === 'wallet' ? 'wallet' : field;
   return embed.success('Value Updated', `Set ${label} for <@${target.id}> to **${safeAmount.toLocaleString()}**.`);
 }
 
 async function handleReset(guildId, actorId, target) {
-  await setUserValues(guildId, target.id, { balance: 0, bank: 0, chips: 0 });
+  await setUserValues(guildId, target.id, { wallet: 0, balance: 0, bank: 0, chips: 0 });
   await logAudit({ guildId, actorId, targetId: target.id, action: 'admin_reset_balances' });
   return embed.success('Done', `Reset wallet, bank, and chips for <@${target.id}>.`);
 }
 
 async function handleResetAll(guildId, actorId) {
-  await User.updateMany({ guildId }, { $set: { balance: 0, bank: 0, chips: 0 } });
+  await User.updateMany({ guildId }, { $set: { wallet: 0, balance: 0, bank: 0, chips: 0 } });
   await logAudit({ guildId, actorId, action: 'admin_reset_all' });
   return embed.success('Done', 'All wallet, bank, and chip balances in this server have been reset.');
 }

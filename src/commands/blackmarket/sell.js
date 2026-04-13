@@ -49,7 +49,7 @@ const run = async ({ userId, guildId, query, quantity, reply }) => {
   );
 
   actualEntry.quantity -= sellQuantity;
-  user.balance += payout;
+  user.wallet += payout;
   if (actualEntry.quantity <= 0) {
     user.inventory = user.inventory.filter(
       (entry) => !(entry.name.toLowerCase() === item.name.toLowerCase() && entry.quantity <= 0),
@@ -75,7 +75,7 @@ const run = async ({ userId, guildId, query, quantity, reply }) => {
     embeds: [
       embed.success(
         'Item Sold',
-        `You sold **${item.name}** x${sellQuantity} for ${fmt(payout)}.\n\nNew balance: ${fmt(user.balance)}`,
+        `You sold **${item.name}** x${sellQuantity} for ${fmt(payout)}.\n\nNew wallet: ${fmt(user.wallet)}`,
       ),
     ],
   });

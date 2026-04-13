@@ -25,18 +25,18 @@ const run = async ({ userId, guildId, reply }) => {
     });
   }
 
-  if (user.balance < cost) {
+  if (user.wallet < cost) {
     return reply({
       embeds: [
         embed.error(
-          `Bail costs ${fmt(cost)} right now, and you only have ${fmt(user.balance)}.\n\nWanted time remaining: ${remainingMinutes} minute(s).`,
+          `Bail costs ${fmt(cost)} right now, and you only have ${fmt(user.wallet)}.\n\nWanted time remaining: ${remainingMinutes} minute(s).`,
         ),
       ],
       ephemeral: true,
     });
   }
 
-  user.balance -= cost;
+  user.wallet -= cost;
   user.wantedUntil = null;
   await user.save();
 
@@ -54,7 +54,7 @@ const run = async ({ userId, guildId, reply }) => {
     embeds: [
       embed.success(
         'Bail Paid',
-        `You paid ${fmt(cost)} to clear your wanted status.\n\nNew balance: ${fmt(user.balance)}`,
+        `You paid ${fmt(cost)} to clear your wanted status.\n\nNew wallet: ${fmt(user.wallet)}`,
       ),
     ],
   });

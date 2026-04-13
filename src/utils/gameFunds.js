@@ -2,24 +2,28 @@ const PendingGame = require('../models/PendingGame');
 const User = require('../models/User');
 
 function getCurrencyField(currency) {
-  return currency === 'chips' ? 'chips' : 'balance';
+  return currency === 'chips' ? 'chips' : 'wallet';
+}
+
+function normalizeCurrency(currency) {
+  return currency === 'balance' ? 'wallet' : currency;
 }
 
 async function reserveFunds({ userId, guildId, game, gameKey, currency, amount, metadata = {} }) {
-  const field = getCurrencyField(currency);
-  const debitResult = await User.updateOne(
-    { userId, guildId, [field]: { $gte: amount } },
-    { $inc: { [field]: -amount } },
-  );
-
-  if (debitResult.modifiedCount !== 1) {
-    return false;
+  const normalizedCurrency = normalizeCurrency(currency);
+  const field = getCurrencyField(normalizedCurrency);
+  const user = await User.findOrCreate(userId, guildId);
+  if ((user[field] || 0) < amount) return false;
+  user[field] -= amount;
+  if (field === 'wallet') {
+    user.balance = user.wallet;
   }
+  await user.save();
 
   await PendingGame.findOneAndUpdate(
-    { userId, guildId, gameKey, currency },
+    { userId, guildId, gameKey, currency: normalizedCurrency },
     {
-      $setOnInsert: { userId, guildId, game, gameKey, currency },
+      $setOnInsert: { userId, guildId, game, gameKey, currency: normalizedCurrency },
       $inc: { amount },
       $set: { metadata, updatedAt: new Date() },
     },
@@ -32,7 +36,7 @@ async function reserveFunds({ userId, guildId, game, gameKey, currency, amount, 
 async function settleReservation({ userId, guildId, gameKey, currency = null }) {
   const query = { userId, guildId, gameKey };
   if (currency) {
-    query.currency = currency;
+    query.currency = normalizeCurrency(currency);
   }
   await PendingGame.deleteMany(query);
 }
@@ -46,14 +50,12 @@ async function refundReservations({ gameKey }) {
 
   for (const reservation of reservations) {
     const field = getCurrencyField(reservation.currency);
-    await User.findOneAndUpdate(
-      { userId: reservation.userId, guildId: reservation.guildId },
-      {
-        $setOnInsert: { userId: reservation.userId, guildId: reservation.guildId },
-        $inc: { [field]: reservation.amount },
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
-    );
+    const user = await User.findOrCreate(reservation.userId, reservation.guildId);
+    user[field] += reservation.amount;
+    if (field === 'wallet') {
+      user.balance = user.wallet;
+    }
+    await user.save();
   }
 
   if (reservations.length) {
@@ -66,20 +68,18 @@ async function refundReservations({ gameKey }) {
 async function refundReservation({ userId, guildId, gameKey, currency = null }) {
   const query = { userId, guildId, gameKey };
   if (currency) {
-    query.currency = currency;
+    query.currency = normalizeCurrency(currency);
   }
 
   const reservations = await PendingGame.find(query);
   for (const reservation of reservations) {
     const field = getCurrencyField(reservation.currency);
-    await User.findOneAndUpdate(
-      { userId: reservation.userId, guildId: reservation.guildId },
-      {
-        $setOnInsert: { userId: reservation.userId, guildId: reservation.guildId },
-        $inc: { [field]: reservation.amount },
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
-    );
+    const user = await User.findOrCreate(reservation.userId, reservation.guildId);
+    user[field] += reservation.amount;
+    if (field === 'wallet') {
+      user.balance = user.wallet;
+    }
+    await user.save();
   }
 
   if (reservations.length) {
@@ -94,14 +94,12 @@ async function refundAllPendingGameFunds() {
 
   for (const reservation of reservations) {
     const field = getCurrencyField(reservation.currency);
-    await User.findOneAndUpdate(
-      { userId: reservation.userId, guildId: reservation.guildId },
-      {
-        $setOnInsert: { userId: reservation.userId, guildId: reservation.guildId },
-        $inc: { [field]: reservation.amount },
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
-    );
+    const user = await User.findOrCreate(reservation.userId, reservation.guildId);
+    user[field] += reservation.amount;
+    if (field === 'wallet') {
+      user.balance = user.wallet;
+    }
+    await user.save();
   }
 
   if (reservations.length) {

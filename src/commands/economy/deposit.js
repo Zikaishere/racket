@@ -6,7 +6,7 @@ const { logAudit } = require('../../utils/audit');
 const run = async ({ userId, guildId, rawAmount, reply }) => {
   const user = await getUser(userId, guildId);
   const normalized = String(rawAmount).toLowerCase();
-  const amount = normalized === 'all' || normalized === 'max' ? user.balance : parseInt(rawAmount, 10);
+  const amount = normalized === 'all' || normalized === 'max' ? user.wallet : parseInt(rawAmount, 10);
 
   if (isNaN(amount) || amount <= 0) {
     return reply({ embeds: [embed.error('Please specify a valid amount to deposit.')], ephemeral: true });
@@ -23,7 +23,7 @@ const run = async ({ userId, guildId, rawAmount, reply }) => {
     embeds: [
       embed.success(
         'Deposit Successful',
-        `You deposited ${fmt(amount)} into your bank.\n\n**Wallet:** ${fmt(updated.balance)}\n**Bank:** ${fmt(updated.bank)}`,
+        `You deposited ${fmt(amount)} into your bank.\n\n**Wallet:** ${fmt(updated.wallet)}\n**Bank:** ${fmt(updated.bank)}`,
       ),
     ],
   });

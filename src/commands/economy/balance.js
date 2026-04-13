@@ -5,13 +5,15 @@ const { getUser, fmt } = require('../../utils/economy');
 const run = async ({ userId, guildId, targetUser, _client, reply }) => {
   const user = await getUser(userId, guildId);
   const name = targetUser ? `${targetUser.username}'s` : 'Your';
+  const netWorth = (user.wallet || 0) + (user.bank || 0);
 
   const e = embed
-    .economy(`💰 ${name} Balance`, null)
+    .economy(`Balance: ${name} Summary`, null)
     .addFields(
-      { name: '👛 Wallet', value: fmt(user.balance), inline: true },
-      { name: '🏦 Bank', value: fmt(user.bank), inline: true },
-      { name: '📈 Total Earned', value: fmt(user.totalEarned), inline: true },
+      { name: 'Wallet', value: fmt(user.wallet), inline: true },
+      { name: 'Bank', value: fmt(user.bank), inline: true },
+      { name: 'Net Worth', value: fmt(netWorth), inline: true },
+      { name: 'Total Earned', value: fmt(user.totalEarned), inline: true },
     );
 
   return reply({ embeds: [e] });
@@ -20,14 +22,14 @@ const run = async ({ userId, guildId, targetUser, _client, reply }) => {
 module.exports = {
   name: 'balance',
   aliases: ['bal', 'wallet'],
-  description: "Check your or someone else's balance.",
+  description: "Check your or someone else's balance summary.",
   usage: '[user]',
   category: 'economy',
   guildOnly: true,
 
   slash: new SlashCommandBuilder()
     .setName('balance')
-    .setDescription("Check your or someone else's balance")
+    .setDescription("Check your or someone else's balance summary")
     .addUserOption((o) => o.setName('user').setDescription('User to check').setRequired(false)),
 
   async execute({ message, _args, client }) {

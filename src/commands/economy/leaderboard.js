@@ -4,14 +4,14 @@ const User = require('../../models/User');
 const { fmt } = require('../../utils/economy');
 
 const TYPES = {
-  balance: { field: null, label: 'Server Leaderboard' }, // net worth (custom calc)
+  balance: { field: null, label: 'Net Worth Leaderboard' }, // net worth (custom calc)
   earned: { field: 'totalEarned', label: 'All-Time Earners' },
   wagered: { field: 'stats.totalWagered', label: 'Top Gamblers' },
   heists: { field: 'stats.heistsWon', label: 'Top Heist Leaders' },
 };
 
 function getNetWorth(user) {
-  return (user.balance || 0) + (user.bank || 0); // add + user.chips if you want casino included
+  return (user.wallet || 0) + (user.bank || 0); // add + user.chips if you want casino included
 }
 
 function getValue(user, type) {
@@ -30,16 +30,9 @@ const run = async ({ guildId, type, reply }) => {
 
   // SPECIAL CASE: net worth sorting
   if (typeKey === 'balance') {
-    users = users
-      .sort((a, b) => getNetWorth(b) - getNetWorth(a))
-      .slice(0, 10);
+    users = users.sort((a, b) => getNetWorth(b) - getNetWorth(a)).slice(0, 10);
   } else {
-    users = users
-      .sort(
-        (a, b) =>
-          (b[typeData.field] || 0) - (a[typeData.field] || 0),
-      )
-      .slice(0, 10);
+    users = users.sort((a, b) => (b[typeData.field] || 0) - (a[typeData.field] || 0)).slice(0, 10);
   }
 
   if (!users.length) {
@@ -50,14 +43,7 @@ const run = async ({ guildId, type, reply }) => {
   }
 
   const lines = users.map((user, index) => {
-    const medal =
-      index === 0
-        ? '🥇'
-        : index === 1
-        ? '🥈'
-        : index === 2
-        ? '🥉'
-        : `**${index + 1}.**`;
+    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `**${index + 1}.**`;
 
     return `${medal} <@${user.userId}> - ${getValue(user, typeKey)}`;
   });
@@ -70,8 +56,7 @@ const run = async ({ guildId, type, reply }) => {
 module.exports = {
   name: 'leaderboard',
   aliases: ['lb', 'top', 'richest'],
-  description:
-    'View the server leaderboard, or use earned, wagered, or heists for alternate rankings.',
+  description: 'View the server leaderboard, or use earned, wagered, or heists for alternate rankings.',
   usage: '[earned|wagered|heists]',
   category: 'economy',
   guildOnly: true,
@@ -97,9 +82,7 @@ module.exports = {
 
     if (!TYPES[type]) {
       return message.reply({
-        embeds: [
-          embed.error('Usage: `.leaderboard [earned|wagered|heists]`'),
-        ],
+        embeds: [embed.error('Usage: `.leaderboard [earned|wagered|heists]`')],
       });
     }
 

@@ -27,7 +27,7 @@ async function run({ client, reply }) {
   const secs = Math.floor(uptime % 60);
 
   const memUsed = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1);
-  const memTotal = (os.totalmem() / 1024 / 1024 / 1024).toFixed(1);
+  const _memTotal = (os.totalmem() / 1024 / 1024 / 1024).toFixed(1);
   const cpuModel = os.cpus()[0].model;
 
   const e = embed
