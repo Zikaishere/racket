@@ -104,7 +104,28 @@ userSchema.pre('save', function (next) {
   next();
 });
 
+const Cache = require('../utils/cache');
+
+const cache = new Cache({ ttl: 5 * 60 * 1000 }); // 5 minute TTL for users
+
+userSchema.post('findOneAndUpdate', function (doc) {
+  if (doc) cache.delete(`${doc.userId}-${doc.guildId}`);
+});
+userSchema.post('save', function (doc) {
+  if (doc) cache.delete(`${doc.userId}-${doc.guildId}`);
+});
+userSchema.post('updateOne', function () {
+  const filter = this.getFilter();
+  if (filter && filter.userId && filter.guildId) {
+    cache.delete(`${filter.userId}-${filter.guildId}`);
+  }
+});
+
 userSchema.statics.findOrCreate = async function (userId, guildId) {
+  const cacheKey = `${userId}-${guildId}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
   const user = await this.findOneAndUpdate(
     { userId, guildId },
     { $setOnInsert: { userId, guildId, wallet: 0, balance: 0 } },
@@ -120,6 +141,7 @@ userSchema.statics.findOrCreate = async function (userId, guildId) {
     await user.save();
   }
 
+  cache.set(cacheKey, user);
   return user;
 };
 

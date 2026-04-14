@@ -72,167 +72,49 @@ module.exports = {
       return;
     }
 
-    // ── Buttons ─────────────────────────────────────────────────────────────
-    if (interaction.isButton()) {
+    // ── Component Interactions (Buttons & Menus) ──────────────────────────────
+    if (interaction.isButton() || interaction.isStringSelectMenu()) {
       const id = interaction.customId;
 
-      // Blackjack buttons
-      if (
-        id.startsWith('bj_hit_') ||
-        id.startsWith('bj_stand_') ||
-        id.startsWith('bj_join_') ||
-        id.startsWith('bj_start_') ||
-        id.startsWith('bj_leave_')
-      ) {
-        const blackjack = client.commands.get('blackjack');
-        const disabledReason = getDisabledCommandReason(guildData, blackjack);
-        if (disabledReason) {
-          return interaction.reply({ embeds: [embed.error(disabledReason)], ephemeral: true });
+      // Find a handler by full ID or prefix
+      let handler = client.components.get(id);
+      let handlerKey = id;
+
+      if (!handler) {
+        // Try matching prefixes (e.g., 'heist_' matches 'heist_start')
+        for (const [prefix, h] of client.components.entries()) {
+          if (id.startsWith(prefix)) {
+            handler = h;
+            handlerKey = prefix;
+            break;
+          }
         }
+      }
+
+      if (handler) {
+        // Check if the command this component belongs to is disabled
+        // We assume the handlerKey/prefix often corresponds to the command category or name
+        // but for safety, we allow the handler to define its own parent command check.
         try {
-          return await blackjack?.handleButton(interaction);
+          return await handler({ interaction, client, guildData });
         } catch (err) {
           const errorId = await logError(
             err,
             {
-              source: 'button_interaction',
-              commandName: 'blackjack',
+              source: interaction.isButton() ? 'button_interaction' : 'select_menu_interaction',
               userId: interaction.user.id,
               guildId: interaction.guild?.id || null,
               channelId: interaction.channel?.id || null,
-              interactionType: 'button',
-              metadata: { customId: id },
+              metadata: { customId: id, handlerKey },
             },
             client,
           );
+          const e = buildUserErrorEmbed(errorId);
           return interaction.replied || interaction.deferred
-            ? interaction.followUp({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true })
-            : interaction.reply({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true });
+            ? interaction.followUp({ embeds: [e], ephemeral: true })
+            : interaction.reply({ embeds: [e], ephemeral: true });
         }
       }
-
-      // Double or Nothing buttons
-      if (id === 'double_flip' || id === 'double_take') {
-        const double = client.commands.get('double');
-        const disabledReason = getDisabledCommandReason(guildData, double);
-        if (disabledReason) {
-          return interaction.reply({ embeds: [embed.error(disabledReason)], ephemeral: true });
-        }
-        try {
-          return await double?.handleButton(interaction);
-        } catch (err) {
-          const errorId = await logError(
-            err,
-            {
-              source: 'button_interaction',
-              commandName: 'double',
-              userId: interaction.user.id,
-              guildId: interaction.guild?.id || null,
-              channelId: interaction.channel?.id || null,
-              interactionType: 'button',
-              metadata: { customId: id },
-            },
-            client,
-          );
-          return interaction.replied || interaction.deferred
-            ? interaction.followUp({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true })
-            : interaction.reply({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true });
-        }
-      }
-
-      // Vault buttons
-      if (id === 'vault_crack' || id === 'vault_take') {
-        const vault = client.commands.get('vault');
-        const disabledReason = getDisabledCommandReason(guildData, vault);
-        if (disabledReason) {
-          return interaction.reply({ embeds: [embed.error(disabledReason)], ephemeral: true });
-        }
-        try {
-          return await vault?.handleButton(interaction);
-        } catch (err) {
-          const errorId = await logError(
-            err,
-            {
-              source: 'button_interaction',
-              commandName: 'vault',
-              userId: interaction.user.id,
-              guildId: interaction.guild?.id || null,
-              channelId: interaction.channel?.id || null,
-              interactionType: 'button',
-              metadata: { customId: id },
-            },
-            client,
-          );
-          return interaction.replied || interaction.deferred
-            ? interaction.followUp({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true })
-            : interaction.reply({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true });
-        }
-      }
-
-      // Heist planning buttons
-      if (id.startsWith('heist_')) {
-        const heist = client.commands.get('heist');
-        const disabledReason = getDisabledCommandReason(guildData, heist);
-        if (disabledReason) {
-          return interaction.reply({ embeds: [embed.error(disabledReason)], ephemeral: true });
-        }
-        try {
-          return await heist?.handleButton(interaction, client);
-        } catch (err) {
-          const errorId = await logError(
-            err,
-            {
-              source: 'button_interaction',
-              commandName: 'heist',
-              userId: interaction.user.id,
-              guildId: interaction.guild?.id || null,
-              channelId: interaction.channel?.id || null,
-              interactionType: 'button',
-              metadata: { customId: id },
-            },
-            client,
-          );
-          return interaction.replied || interaction.deferred
-            ? interaction.followUp({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true })
-            : interaction.reply({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true });
-        }
-      }
-
-      return;
-    }
-
-    // ── Select Menus ─────────────────────────────────────────
-    if (interaction.isStringSelectMenu()) {
-      const id = interaction.customId;
-      if (id === 'casino_nav') {
-        const lobby = client.commands.get('lobby');
-        const disabledReason = getDisabledCommandReason(guildData, lobby);
-        if (disabledReason) {
-          return interaction.reply({ embeds: [embed.error(disabledReason)], ephemeral: true });
-        }
-        try {
-          return await lobby?.handleNav(interaction);
-        } catch (err) {
-          const errorId = await logError(
-            err,
-            {
-              source: 'select_menu_interaction',
-              commandName: 'lobby',
-              userId: interaction.user.id,
-              guildId: interaction.guild?.id || null,
-              channelId: interaction.channel?.id || null,
-              interactionType: 'select_menu',
-              metadata: { customId: id },
-            },
-            client,
-          );
-          return interaction.replied || interaction.deferred
-            ? interaction.followUp({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true })
-            : interaction.reply({ embeds: [buildUserErrorEmbed(errorId)], ephemeral: true });
-        }
-      }
-      // Help menu is handled by its own collector inside help.js
-      return;
     }
   },
 };

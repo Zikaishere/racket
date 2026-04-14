@@ -207,13 +207,8 @@ module.exports = {
     });
   },
 
-  async handleButton(interaction) {
-    if (interaction.customId === 'vault_crack') {
-      return handleCrack(interaction);
-    }
-
-    if (interaction.customId === 'vault_take') {
-      return handleTake(interaction);
-    }
+  components: {
+    vault_crack: async ({ interaction }) => handleCrack(interaction),
+    vault_take: async ({ interaction }) => handleTake(interaction),
   },
 };

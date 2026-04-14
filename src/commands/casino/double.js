@@ -179,13 +179,8 @@ module.exports = {
     });
   },
 
-  async handleButton(interaction) {
-    if (interaction.customId === 'double_flip') {
-      return handleFlip(interaction.user.id, interaction, null);
-    }
-
-    if (interaction.customId === 'double_take') {
-      return handleTake(interaction);
-    }
+  components: {
+    double_flip: async ({ interaction }) => handleFlip(interaction.user.id, interaction, null),
+    double_take: async ({ interaction }) => handleTake(interaction),
   },
 };

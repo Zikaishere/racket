@@ -607,98 +607,101 @@ module.exports = {
     });
   },
 
-  async handleButton(interaction, client) {
-    const heist = activeHeists.get(interaction.guild.id);
-    if (!heist) return interaction.reply({ embeds: [embed.error('This heist is no longer active.')], ephemeral: true });
+  components: {
+    heist: async ({ interaction, client }) => {
+      const heist = activeHeists.get(interaction.guild.id);
+      if (!heist)
+        return interaction.reply({ embeds: [embed.error('This heist is no longer active.')], ephemeral: true });
 
-    const id = interaction.customId;
-    const userId = interaction.user.id;
+      const id = interaction.customId;
+      const userId = interaction.user.id;
 
-    if (id === 'heist_join') {
-      if (heist.crew.has(userId))
-        return interaction.reply({ embeds: [embed.error('You are already in this heist.')], ephemeral: true });
-      if (heist.crew.size >= heist.target.maxCrew)
-        return interaction.reply({
-          embeds: [embed.error(`This target only supports ${heist.target.maxCrew} crew members.`)],
-          ephemeral: true,
+      if (id === 'heist_join') {
+        if (heist.crew.has(userId))
+          return interaction.reply({ embeds: [embed.error('You are already in this heist.')], ephemeral: true });
+        if (heist.crew.size >= heist.target.maxCrew)
+          return interaction.reply({
+            embeds: [embed.error(`This target only supports ${heist.target.maxCrew} crew members.`)],
+            ephemeral: true,
+          });
+
+        const user = await getUser(userId, interaction.guild.id);
+        const permanentCrew = await Crew.findOne({ guildId: interaction.guild.id, members: userId });
+        const cooldownRemaining = getRemainingMs(user.heistCooldownUntil);
+        if (cooldownRemaining > 0) {
+          return interaction.reply({
+            embeds: [
+              embed.error(
+                `You need to cool off before your next heist. Try again in ${Math.ceil(cooldownRemaining / 60000)} minutes.`,
+              ),
+            ],
+            ephemeral: true,
+          });
+        }
+        if (user.wallet < heist.bet) {
+          return interaction.reply({
+            embeds: [embed.error(`You do not have enough raqs to join. Need: ${fmt(heist.bet)}`)],
+            ephemeral: true,
+          });
+        }
+
+        const reserved = await reserveFunds({
+          userId,
+          guildId: interaction.guild.id,
+          game: 'heist',
+          gameKey: heist.gameKey,
+          currency: 'wallet',
+          amount: heist.bet,
+          metadata: { username: interaction.user.username, target: heist.target.name },
         });
 
-      const user = await getUser(userId, interaction.guild.id);
-      const permanentCrew = await Crew.findOne({ guildId: interaction.guild.id, members: userId });
-      const cooldownRemaining = getRemainingMs(user.heistCooldownUntil);
-      if (cooldownRemaining > 0) {
+        if (!reserved) {
+          return interaction.reply({
+            embeds: [embed.error(`You do not have enough raqs to join. Need: ${fmt(heist.bet)}`)],
+            ephemeral: true,
+          });
+        }
+
+        heist.crew.set(userId, {
+          bet: heist.bet,
+          username: interaction.user.username,
+          role: pickRole(heist.crew),
+          crewId: permanentCrew?._id?.toString() || null,
+          crewName: permanentCrew?.name || null,
+        });
+        return interaction.update({ embeds: [buildPlanningEmbed(heist)], components: buildControls(heist, false) });
+      }
+
+      if (userId !== heist.leaderId) {
         return interaction.reply({
-          embeds: [
-            embed.error(
-              `You need to cool off before your next heist. Try again in ${Math.ceil(cooldownRemaining / 60000)} minutes.`,
-            ),
-          ],
+          embeds: [embed.error('Only the heist leader can change the plan.')],
           ephemeral: true,
         });
       }
-      if (user.wallet < heist.bet) {
-        return interaction.reply({
-          embeds: [embed.error(`You do not have enough raqs to join. Need: ${fmt(heist.bet)}`)],
-          ephemeral: true,
-        });
+
+      if (id.startsWith('heist_strategy_')) {
+        heist.strategy = id.replace('heist_strategy_', '');
+        return interaction.update({ embeds: [buildPlanningEmbed(heist)], components: buildControls(heist, false) });
       }
 
-      const reserved = await reserveFunds({
-        userId,
-        guildId: interaction.guild.id,
-        game: 'heist',
-        gameKey: heist.gameKey,
-        currency: 'wallet',
-        amount: heist.bet,
-        metadata: { username: interaction.user.username, target: heist.target.name },
-      });
-
-      if (!reserved) {
-        return interaction.reply({
-          embeds: [embed.error(`You do not have enough raqs to join. Need: ${fmt(heist.bet)}`)],
-          ephemeral: true,
-        });
+      if (id.startsWith('heist_entry_')) {
+        heist.selectedEntryIndex = parseInt(id.replace('heist_entry_', ''), 10);
+        return interaction.update({ embeds: [buildPlanningEmbed(heist)], components: buildControls(heist, false) });
       }
 
-      heist.crew.set(userId, {
-        bet: heist.bet,
-        username: interaction.user.username,
-        role: pickRole(heist.crew),
-        crewId: permanentCrew?._id?.toString() || null,
-        crewName: permanentCrew?.name || null,
-      });
-      return interaction.update({ embeds: [buildPlanningEmbed(heist)], components: buildControls(heist, false) });
-    }
-
-    if (userId !== heist.leaderId) {
-      return interaction.reply({
-        embeds: [embed.error('Only the heist leader can change the plan.')],
-        ephemeral: true,
-      });
-    }
-
-    if (id.startsWith('heist_strategy_')) {
-      heist.strategy = id.replace('heist_strategy_', '');
-      return interaction.update({ embeds: [buildPlanningEmbed(heist)], components: buildControls(heist, false) });
-    }
-
-    if (id.startsWith('heist_entry_')) {
-      heist.selectedEntryIndex = parseInt(id.replace('heist_entry_', ''), 10);
-      return interaction.update({ embeds: [buildPlanningEmbed(heist)], components: buildControls(heist, false) });
-    }
-
-    if (id === 'heist_scope') {
-      if (!heist.scoped) {
-        heist.scoped = true;
-        heist.launchAt += 15000;
-        scheduleLaunch(heist, client);
+      if (id === 'heist_scope') {
+        if (!heist.scoped) {
+          heist.scoped = true;
+          heist.launchAt += 15000;
+          scheduleLaunch(heist, client);
+        }
+        return interaction.update({ embeds: [buildPlanningEmbed(heist)], components: buildControls(heist, false) });
       }
-      return interaction.update({ embeds: [buildPlanningEmbed(heist)], components: buildControls(heist, false) });
-    }
 
-    if (id === 'heist_launch') {
-      await interaction.update({ embeds: [buildPlanningEmbed(heist)], components: buildControls(heist, true) });
-      return resolveHeist(interaction.guild.id, client);
-    }
+      if (id === 'heist_launch') {
+        await interaction.update({ embeds: [buildPlanningEmbed(heist)], components: buildControls(heist, true) });
+        return resolveHeist(interaction.guild.id, client);
+      }
+    },
   },
 };

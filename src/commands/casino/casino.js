@@ -85,6 +85,45 @@ const run = async ({ userId, guildId, reply }) => {
   return reply({ embeds: [buildLobbyEmbed(user, guildId)], components: [buildNavRow()] });
 };
 
+const handleNav = async ({ interaction, _client, _guildData }) => {
+  const selected = interaction.values[0];
+  const user = await getUser(interaction.user.id, interaction.guild.id);
+  let lobbyEmbed;
+
+  if (selected === 'lobby') {
+    lobbyEmbed = buildLobbyEmbed(user, interaction.guild.id);
+  } else if (selected === 'cashier') {
+    lobbyEmbed = embed
+      .raw(0x2dc653)
+      .setTitle('Casino Cashier')
+      .setDescription(
+        '"Looking to buy chips or cash out?"\n\n- **Buy Chips**: `/cashier buy <amount>`\n- **Cash Out**: `/cashier cashout <amount>`\n\nCashouts above 5,000 chips are taxed unless you try to evade it.',
+      );
+  } else if (selected === 'tables') {
+    lobbyEmbed = buildTablesEmbed(interaction.guild.id);
+  } else if (selected === 'slots') {
+    lobbyEmbed = embed
+      .raw(0xffb703)
+      .setTitle('Slots and Arcade Area')
+      .setDescription(
+        'Flashing lights and bad decisions everywhere.\n\n- **Slots**: `/slots <bet>`\n- **Vault Crack**: `/vault <bet>`',
+      );
+  } else if (selected === 'vip') {
+    if (!['VIP', 'Whale'].includes(user.casinoRank)) {
+      return interaction.reply({
+        embeds: [embed.error('You must be at least **VIP** rank to enter the lounge.')],
+        ephemeral: true,
+      });
+    }
+    lobbyEmbed = embed
+      .raw(0x7209b7)
+      .setTitle('VIP Lounge')
+      .setDescription(`Welcome back, ${user.casinoRank}.\n\nHigh stakes, cleaner drinks, and fewer questions asked.`);
+  }
+
+  await interaction.update({ embeds: [lobbyEmbed], components: [buildNavRow()] });
+};
+
 module.exports = {
   name: 'lobby',
   aliases: ['casino'],
@@ -107,42 +146,7 @@ module.exports = {
     });
   },
 
-  async handleNav(interaction) {
-    const selected = interaction.values[0];
-    const user = await getUser(interaction.user.id, interaction.guild.id);
-    let lobbyEmbed;
-
-    if (selected === 'lobby') {
-      lobbyEmbed = buildLobbyEmbed(user, interaction.guild.id);
-    } else if (selected === 'cashier') {
-      lobbyEmbed = embed
-        .raw(0x2dc653)
-        .setTitle('Casino Cashier')
-        .setDescription(
-          '"Looking to buy chips or cash out?"\n\n- **Buy Chips**: `/cashier buy <amount>`\n- **Cash Out**: `/cashier cashout <amount>`\n\nCashouts above 5,000 chips are taxed unless you try to evade it.',
-        );
-    } else if (selected === 'tables') {
-      lobbyEmbed = buildTablesEmbed(interaction.guild.id);
-    } else if (selected === 'slots') {
-      lobbyEmbed = embed
-        .raw(0xffb703)
-        .setTitle('Slots and Arcade Area')
-        .setDescription(
-          'Flashing lights and bad decisions everywhere.\n\n- **Slots**: `/slots <bet>`\n- **Vault Crack**: `/vault <bet>`',
-        );
-    } else if (selected === 'vip') {
-      if (!['VIP', 'Whale'].includes(user.casinoRank)) {
-        return interaction.reply({
-          embeds: [embed.error('You must be at least **VIP** rank to enter the lounge.')],
-          ephemeral: true,
-        });
-      }
-      lobbyEmbed = embed
-        .raw(0x7209b7)
-        .setTitle('VIP Lounge')
-        .setDescription(`Welcome back, ${user.casinoRank}.\n\nHigh stakes, cleaner drinks, and fewer questions asked.`);
-    }
-
-    await interaction.update({ embeds: [lobbyEmbed], components: [buildNavRow()] });
+  components: {
+    casino_nav: handleNav,
   },
 };

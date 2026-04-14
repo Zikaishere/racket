@@ -256,7 +256,7 @@ const run = async ({ userId, guildId, username, bet, reply }) => {
   return reply({ embeds: [renderLobby(table)], components: [buildLobbyButtons(tableId)] });
 };
 
-const handleButton = async (interaction) => {
+const handleButton = async ({ interaction, _client, _guildData }) => {
   const [, action, tableId] = interaction.customId.split('_');
   const table = CasinoManager.getTable(interaction.guild.id, tableId);
 
@@ -385,7 +385,6 @@ const handleButton = async (interaction) => {
     return nextTurn(interaction, table);
   }
 };
-
 module.exports = {
   name: 'blackjack',
   aliases: ['bj', '21'],
@@ -428,5 +427,11 @@ module.exports = {
     });
   },
 
-  handleButton,
+  components: {
+    bj_join: handleButton,
+    bj_leave: handleButton,
+    bj_start: handleButton,
+    bj_hit: handleButton,
+    bj_stand: handleButton,
+  },
 };

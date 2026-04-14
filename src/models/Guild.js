@@ -23,9 +23,11 @@ const guildSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-const cache = new Map();
-const CACHE_TTL = 10 * 60 * 1000;
+const Cache = require('../utils/cache');
 
+const cache = new Cache({ ttl: 15 * 60 * 1000 }); // 15 minute TTL for guilds
+
+// Cache invalidation on updates
 guildSchema.post('findOneAndUpdate', function (doc) {
   if (doc) cache.delete(doc.guildId);
 });
@@ -38,14 +40,15 @@ guildSchema.post('updateOne', function () {
 });
 
 guildSchema.statics.findOrCreate = async function (guildId) {
-  const now = Date.now();
-  if (cache.has(guildId)) {
-    const entry = cache.get(guildId);
-    if (now - entry.time < CACHE_TTL) return entry.doc;
-  }
+  const cached = cache.get(guildId);
+  if (cached) return cached;
+
   let guild = await this.findOne({ guildId });
-  if (!guild) guild = await this.create({ guildId });
-  if (guild) cache.set(guildId, { doc: guild, time: now });
+  if (!guild) {
+    guild = await this.create({ guildId });
+  }
+
+  if (guild) cache.set(guildId, guild);
   return guild;
 };
 
