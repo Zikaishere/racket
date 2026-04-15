@@ -26,13 +26,24 @@ const run = async ({ guildId, type, reply }) => {
   const typeKey = TYPES[type] ? type : 'balance';
   const typeData = TYPES[typeKey];
 
-  let users = await User.find({ guildId }).limit(50);
+  let users;
 
-  // SPECIAL CASE: net worth sorting
   if (typeKey === 'balance') {
-    users = users.sort((a, b) => getNetWorth(b) - getNetWorth(a)).slice(0, 10);
+    users = await User.aggregate([
+      { $match: { guildId } },
+      { $addFields: { netWorth: { $add: ['$wallet', '$bank'] } } },
+      { $sort: { netWorth: -1 } },
+      { $limit: 10 },
+    ]);
+    users = users.map((u) => ({ ...u, userId: u.userId }));
+  } else if (typeKey === 'earned') {
+    users = await User.find({ guildId }).sort({ totalEarned: -1 }).limit(10).lean();
+  } else if (typeKey === 'wagered') {
+    users = await User.find({ guildId }).sort({ 'stats.totalWagered': -1 }).limit(10).lean();
+  } else if (typeKey === 'heists') {
+    users = await User.find({ guildId }).sort({ 'stats.heistsWon': -1 }).limit(10).lean();
   } else {
-    users = users.sort((a, b) => (b[typeData.field] || 0) - (a[typeData.field] || 0)).slice(0, 10);
+    users = [];
   }
 
   if (!users.length) {

@@ -25,6 +25,21 @@ const PAYOUTS = {
 
 const spin = () => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
 
+function calculateSlotsWin(reels, bet) {
+  const [a, b, c] = reels;
+  if (a === b && b === c) {
+    const multiplier = PAYOUTS[a] || 2;
+    return {
+      result: 'jackpot',
+      netProfit: Math.floor(bet * multiplier),
+      totalReturn: bet + Math.floor(bet * multiplier),
+    };
+  } else if (a === b || b === c || a === c) {
+    return { result: 'two_of_kind', netProfit: Math.floor(bet * 0.5), totalReturn: bet + Math.floor(bet * 0.5) };
+  }
+  return { result: 'loss', netProfit: -bet, totalReturn: 0 };
+}
+
 const run = async ({ userId, guildId, username, bet, reply, editReply }) => {
   if (isNaN(bet) || bet < CASINO_MIN_BET || bet > CASINO_MAX_BET) {
     return reply({
@@ -129,6 +144,9 @@ const run = async ({ userId, guildId, username, bet, reply, editReply }) => {
 };
 
 module.exports = {
+  SYMBOLS,
+  PAYOUTS,
+  calculateSlotsWin,
   name: 'slots',
   aliases: ['slot', 'spin'],
   description: 'Spin the slot machine.',

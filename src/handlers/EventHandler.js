@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { logError } = require('../utils/errorManager');
 
 class EventHandler {
   constructor(client) {
@@ -18,10 +19,19 @@ class EventHandler {
         continue;
       }
 
+      const boundExecute = async (...args) => {
+        try {
+          await event.execute(...args, this.client);
+        } catch (error) {
+          await logError(error, { event: event.name, file }, this.client);
+          console.error(`Error in event ${event.name}:`, error.message);
+        }
+      };
+
       if (event.once) {
-        this.client.once(event.name, (...args) => event.execute(...args, this.client));
+        this.client.once(event.name, boundExecute);
       } else {
-        this.client.on(event.name, (...args) => event.execute(...args, this.client));
+        this.client.on(event.name, boundExecute);
       }
 
       console.log(`  ✅ Loaded event: ${event.name}`);

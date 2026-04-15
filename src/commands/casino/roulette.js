@@ -14,6 +14,14 @@ function getColor(number) {
   return 'black';
 }
 
+function calculateRoulettePayout(bet, won, isNumber) {
+  if (!won) return { profit: 0, totalReturn: 0 };
+  if (isNumber) {
+    return { profit: bet * 35, totalReturn: bet + bet * 35 };
+  }
+  return { profit: bet, totalReturn: bet * 2 };
+}
+
 const BET_TYPES = {
   red: { check: (number) => getColor(number) === 'red', payout: 2, label: 'Red' },
   black: { check: (number) => getColor(number) === 'black', payout: 2, label: 'Black' },
@@ -150,6 +158,10 @@ const run = async ({ userId, guildId, username, channelId, client, bet, betType,
 };
 
 module.exports = {
+  RED,
+  getColor,
+  BET_TYPES,
+  calculateRoulettePayout,
   name: 'roulette',
   aliases: ['rou'],
   description: 'Bet on the active roulette table. Wheel spins every 30s.',

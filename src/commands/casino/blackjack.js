@@ -43,6 +43,39 @@ function formatHand(hand, hideSecond = false) {
   return hand.map((card, index) => (hideSecond && index === 1 ? '🂠' : `${card.rank}${card.suit}`)).join(' ');
 }
 
+function getChickenPower(chicken) {
+  if (!chicken || !chicken.stats) return 0;
+  return (chicken.stats.strength || 0) + (chicken.stats.speed || 0) + (chicken.stats.grit || 0);
+}
+
+function calculateCockfightWin(playerPower, housePower) {
+  const winChance = Math.min(0.85, Math.max(0.2, playerPower / (playerPower + housePower)));
+  const oddsMultiplier = Math.min(3.75, Math.max(1.35, 1.1 + (1 - winChance) * 3));
+  return { winChance, oddsMultiplier };
+}
+
+function calculateVaultAlarm(level, luck) {
+  const ALARM_CHANCE = [0.1, 0.2, 0.35, 0.5, 0.65, 0.85];
+  return Math.max(0.01, (ALARM_CHANCE[level] || 0.85) * (1 / luck));
+}
+
+function calculateVaultPool(bet, level) {
+  const MULTIPLIERS = [1.2, 1.5, 2.0, 3.5, 5.0, 10.0];
+  return Math.floor(bet * (MULTIPLIERS[level] || 10));
+}
+
+function calculateDoubleWinChance(luck) {
+  return 0.5 * luck;
+}
+
+function calculateDoublePool(originalBet, wins) {
+  return originalBet * Math.pow(2, wins);
+}
+
+function calculateDoubleProfit(pool, originalBet) {
+  return pool - originalBet;
+}
+
 function maybeAddHouseBot(table) {
   if (table.players.length === 1) {
     table.players.push({ id: HOUSE_BOT_ID, username: 'House Bot', hand: [], state: 'waiting', isBot: true });
@@ -386,6 +419,15 @@ const handleButton = async ({ interaction, _client, _guildData }) => {
   }
 };
 module.exports = {
+  cardValue,
+  handValue,
+  getChickenPower,
+  calculateCockfightWin,
+  calculateVaultAlarm,
+  calculateVaultPool,
+  calculateDoubleWinChance,
+  calculateDoublePool,
+  calculateDoubleProfit,
   name: 'blackjack',
   aliases: ['bj', '21'],
   description: 'Create a multiplayer Blackjack table.',

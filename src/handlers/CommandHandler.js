@@ -69,8 +69,6 @@ class CommandHandler {
             this.client.components.set(customIdPrefix, handler);
           }
         }
-
-        console.log(`  ✅ Loaded command: ${command.name} [${category}]`);
       }
     }
   }

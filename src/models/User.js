@@ -86,6 +86,10 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.index({ userId: 1, guildId: 1 }, { unique: true });
+userSchema.index({ guildId: 1 });
+userSchema.index({ guildId: 1, totalEarned: -1 });
+userSchema.index({ guildId: 1, 'stats.totalWagered': -1 });
+userSchema.index({ guildId: 1, 'stats.heistsWon': -1 });
 
 userSchema.pre('init', function (doc) {
   if (doc.wallet == null && doc.balance != null) {

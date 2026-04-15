@@ -11,5 +11,6 @@ const crewSchema = new mongoose.Schema({
 
 crewSchema.index({ guildId: 1, name: 1 }, { unique: true });
 crewSchema.index({ guildId: 1, leaderId: 1 }, { unique: true });
+crewSchema.index({ guildId: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Crew', crewSchema);

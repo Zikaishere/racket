@@ -14,5 +14,6 @@ const pendingGameSchema = new mongoose.Schema({
 
 pendingGameSchema.index({ userId: 1, guildId: 1, gameKey: 1, currency: 1 }, { unique: true });
 pendingGameSchema.index({ gameKey: 1 });
+pendingGameSchema.index({ createdAt: 1 });
 
 module.exports = mongoose.model('PendingGame', pendingGameSchema);

@@ -20,6 +20,10 @@ function rollTier() {
   return TIERS[0];
 }
 
+function calculateScratchPayout(bet, tier) {
+  return Math.floor(bet * tier.multiplier);
+}
+
 const run = async ({ userId, guildId, bet, reply }) => {
   if (isNaN(bet) || bet < CASINO_MIN_BET || bet > CASINO_MAX_BET) {
     return reply({
@@ -70,6 +74,9 @@ const run = async ({ userId, guildId, bet, reply }) => {
 };
 
 module.exports = {
+  TIERS,
+  rollTier,
+  calculateScratchPayout,
   name: 'scratch',
   aliases: ['scratchcard'],
   description: 'Buy and reveal a scratch card for a quick casino hit.',

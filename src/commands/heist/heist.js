@@ -234,7 +234,9 @@ function appendHeistHistory(user, entry) {
 
 async function editHeistMessage(heist, payload) {
   if (!heist.message) return;
-  await heist.message.edit(payload).catch(() => {});
+  await heist.message.edit(payload).catch((err) => {
+    console.warn('[Heist] Failed to edit message:', err.message);
+  });
 }
 
 function scheduleLaunch(heist, client) {

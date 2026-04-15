@@ -14,5 +14,7 @@ const listingSchema = new mongoose.Schema({
 });
 
 listingSchema.index({ guildId: 1, sold: 1, expiresAt: 1 });
+listingSchema.index({ guildId: 1, sold: 1, createdAt: -1 });
+listingSchema.index({ sellerId: 1, guildId: 1, sold: 1, createdAt: -1 });
 
 module.exports = mongoose.model('BlackMarket', listingSchema);

@@ -171,7 +171,11 @@ module.exports = {
         });
       }
     });
-    collector.on('end', () => msg.edit({ components: [] }).catch(() => {}));
+    collector.on('end', () =>
+      msg.edit({ components: [] }).catch((err) => {
+        console.warn('[Help] Failed to clear components:', err.message);
+      }),
+    );
   },
 
   async executeSlash({ interaction, client }) {
@@ -233,6 +237,10 @@ module.exports = {
         });
       }
     });
-    collector.on('end', () => msg.edit({ components: [] }).catch(() => {}));
+    collector.on('end', () =>
+      msg.edit({ components: [] }).catch((err) => {
+        console.warn('[Help] Failed to clear components:', err.message);
+      }),
+    );
   },
 };

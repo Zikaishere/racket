@@ -17,7 +17,10 @@ module.exports = {
 
   async execute({ message, prefix }) {
     await postSetupGuide(message.channel, prefix);
-    if (message.deletable) await message.delete().catch(() => {});
+    if (message.deletable)
+      await message.delete().catch((err) => {
+        console.warn('[Setup] Failed to delete message:', err.message);
+      });
   },
 
   async executeSlash({ interaction, guildData }) {
