@@ -37,7 +37,7 @@ module.exports = {
     const e = embed
       .raw(0xa1cf3a)
       .setTitle('💡 New Suggestion')
-      .setDescription(content)
+      .setDescription(content || "No suggestion provided.")
       .setAuthor({ name: user.tag, iconURL: user.displayAvatarURL() })
       .setFooter({ text: `User ID: ${user.id}` })
       .setTimestamp();
