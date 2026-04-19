@@ -6,3 +6,4 @@ package-lock.json
 .prettierrc
 lobby_improvements.md
 eslint.config.mjs
+CHANGELOG.md

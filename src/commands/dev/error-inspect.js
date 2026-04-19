@@ -6,8 +6,8 @@ module.exports = {
   name: 'error-inspect',
   description: 'Inspect a logged error by its ID.',
   usage: '<errorId>',
-  category: 'admin',
-  adminOnly: true,
+  category: 'dev',
+  devOnly: true,
   guildOnly: true,
 
   slash: new SlashCommandBuilder()

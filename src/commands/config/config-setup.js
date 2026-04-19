@@ -2,8 +2,8 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { postSetupGuide } = require('../../utils/configTools');
 
 module.exports = {
-  name: 'setup',
-  aliases: ['setuphere'],
+  name: 'config-setup',
+  aliases: ['setup', 'setuphere'],
   description: 'Post the interactive server configuration wizard in this channel.',
   usage: '',
   category: 'config',
@@ -11,7 +11,7 @@ module.exports = {
   adminOnly: true,
 
   slash: new SlashCommandBuilder()
-    .setName('setup')
+    .setName('config-setup')
     .setDescription('Post the configuration wizard in this channel')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 

@@ -7,29 +7,28 @@ function buildSetupEmbed(prefix = DEFAULT_PREFIX) {
     .setTitle('Thanks for adding Racket')
     .setDescription('Here is the fastest way to get the bot set up in your server.')
     .addFields(
-      { name: '1. Check current setup', value: `Use \`${prefix}configstatus\` or \`/configstatus\`.`, inline: false },
+      { name: '1. Check current setup', value: `Use \`${prefix}config view\` or \`/config view\`.`, inline: false },
       {
         name: '2. Post this guide again',
-        value: `Use \`${prefix}setuphere\` in the channel where you want the setup guide posted.`,
+        value: `Use \`${prefix}config-setup\` in the channel where you want the setup guide posted.`,
         inline: false,
       },
-      { name: '3. Set your prefix', value: `Use \`${prefix}setprefix <newPrefix>\`.`, inline: false },
+      { name: '3. Set your prefix', value: `Use \`${prefix}config prefix <newPrefix>\`.`, inline: false },
       {
         name: '4. Add admin roles',
-        value: `Use \`${prefix}adminrole add @Role\` so trusted staff can manage the bot.`,
+        value: `Use \`${prefix}config adminrole <@Role> add\` so trusted staff can manage the bot.`,
         inline: false,
       },
       {
         name: '5. Toggle features or commands',
-        value: `Use \`${prefix}togglefeature <casino|heist|blackmarket> <on|off>\` or \`${prefix}togglecommand <name> <on|off>\`.`,
+        value: `Use \`${prefix}config feature <casino|heist|blackmarket> <on|off>\` or \`${prefix}config command <name> <on|off>\`.`,
         inline: false,
       },
       {
-        name: '6. See what can be changed',
-        value: `Use \`${prefix}configcommands\` to list toggleable commands and \`${prefix}config\` for the setup overview.`,
+        name: '🚀 New: Player Onboarding',
+        value: `New to Racket? Use \`${prefix}onboarding\` or \`/onboarding\` for a quick start guide and feature overview!`,
         inline: false,
       },
-      { name: '7. Browse commands', value: `Use \`${prefix}help\` or \`/help\`.`, inline: false },
       {
         name: 'Who can configure?',
         value:

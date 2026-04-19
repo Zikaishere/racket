@@ -1,4 +1,4 @@
-const { ChannelType, PermissionsBitField } = require('discord.js');
+const { ChannelType, PermissionsBitField, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const Guild = require('../models/Guild');
 const embed = require('../utils/embed');
 const { DEFAULT_PREFIX, DEV_LOG_CHANNEL_ID } = require('../config');
@@ -45,9 +45,21 @@ module.exports = {
     const welcomeChannel = await findWelcomeChannel(guild);
 
     if (welcomeChannel) {
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel('Get Started')
+          .setCustomId('onboarding_start')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setLabel('Setup Guide')
+          .setCustomId('config_setup_guide')
+          .setStyle(ButtonStyle.Secondary),
+      );
+
       await welcomeChannel
         .send({
           embeds: [buildSetupEmbed(guildData.prefix || DEFAULT_PREFIX)],
+          components: [row],
         })
         .catch((_error) => {});
     }

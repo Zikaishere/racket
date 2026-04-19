@@ -40,15 +40,8 @@ const CONFIG_CATEGORY_CHOICES = [
 const PROTECTED_COMMANDS = new Set([
   'help',
   'config',
-  'configstatus',
-  'configsetup',
-  'setuphere',
-  'configcommands',
-  'setprefix',
-  'togglefeature',
-  'togglecommand',
-  'adminrole',
-  'resetconfig',
+  'config-setup',
+  'onboarding',
 ]);
 
 function resolveCommand(client, name) {
@@ -115,7 +108,7 @@ function buildStatusEmbed(guildData) {
       },
       {
         name: 'Quick Setup',
-        value: `\`${prefix}configsetup\`\n\`${prefix}setprefix <newPrefix>\`\n\`${prefix}adminrole add @Role\`\n\`${prefix}configcommands\``,
+        value: `\`${prefix}config-setup\`\n\`${prefix}config prefix <newPrefix>\`\n\`${prefix}config adminrole <@Role> add\`\n\`/config view\``,
         inline: false,
       },
     );
@@ -341,17 +334,17 @@ function buildConfigOverviewEmbed(prefix) {
     .addFields(
       {
         name: 'Setup',
-        value: `\`${prefix}configsetup\`\n\`${prefix}setuphere\`\n\`${prefix}configstatus\``,
+        value: `\`${prefix}config-setup\`\n\`/config view\``,
         inline: true,
       },
       {
         name: 'Toggles',
-        value: `\`${prefix}togglefeature <feature> <on|off>\`\n\`${prefix}togglecommand <command> <on|off>\`\n\`${prefix}configcommands [category]\``,
+        value: `\`${prefix}config feature <feature> <on|off>\`\n\`${prefix}config command <command> <on|off>\``,
         inline: true,
       },
       {
         name: 'Server Settings',
-        value: `\`${prefix}setprefix <newPrefix>\`\n\`${prefix}adminrole add @Role\`\n\`${prefix}config cooldown view\`\n\`${prefix}resetconfig\``,
+        value: `\`${prefix}config prefix <newPrefix>\`\n\`${prefix}config adminrole <add|remove> <@Role>\`\n\`${prefix}config cooldown view\``,
         inline: true,
       },
     );
