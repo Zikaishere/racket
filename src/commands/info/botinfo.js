@@ -34,7 +34,7 @@ async function run({ client, reply }) {
     .info(`🎰 Racket — Bot Info`, null)
     .setThumbnail(client.user.displayAvatarURL())
     .addFields(
-      { name: '🤖 Version', value: '1.0.0', inline: true },
+      { name: '🤖 Version', value: '1.1.1', inline: true },
       { name: '📡 Servers', value: `${client.guilds.cache.size}`, inline: true },
       { name: '👥 Users', value: `${client.users.cache.size}`, inline: true },
       { name: '⏱️ Uptime', value: `${hours}h ${mins}m ${secs}s`, inline: true },
