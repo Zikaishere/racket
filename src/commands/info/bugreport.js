@@ -1,6 +1,6 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const embed = require('../../utils/embed');
-const { BUG_REPORT_CHANNEL_ID } = require('../../config');
+const { BUG_REPORT_CHANNEL_ID, COLOR_SUCCESS } = require('../../config');
 
 module.exports = {
   name: 'bug-report',
@@ -62,6 +62,25 @@ module.exports = {
       e.addFields({ name: 'Error ID', value: `\`${errorId}\``, inline: false });
     }
 
-    await channel.send({ embeds: [e] }).catch(() => null);
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('bug_fixed').setLabel('Fixed').setStyle(ButtonStyle.Success),
+    );
+
+    await channel.send({ embeds: [e], components: [row] }).catch(() => null);
+  },
+
+  components: {
+    bug_fixed: async ({ interaction }) => {
+      const oldEmbed = interaction.message.embeds[0];
+      const newEmbed = EmbedBuilder.from(oldEmbed)
+        .setColor(COLOR_SUCCESS)
+        .setTitle('✅ Bug Fixed')
+        .setTimestamp();
+
+      await interaction.update({
+        embeds: [newEmbed],
+        components: [], // Remove button
+      });
+    },
   },
 };

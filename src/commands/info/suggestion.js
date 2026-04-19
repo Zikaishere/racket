@@ -1,6 +1,6 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const embed = require('../../utils/embed');
-const { SUGGESTION_CHANNEL_ID } = require('../../config');
+const { SUGGESTION_CHANNEL_ID, SUGGESTION_ACCEPTED_CHANNEL_ID, COLOR_ERROR } = require('../../config');
 
 module.exports = {
   name: 'suggestion',
@@ -42,6 +42,40 @@ module.exports = {
       .setFooter({ text: `User ID: ${user.id}` })
       .setTimestamp();
 
-    await channel.send({ embeds: [e] }).catch(() => null);
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('suggestion_add').setLabel('Add').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('suggestion_reject').setLabel('Reject').setStyle(ButtonStyle.Danger),
+    );
+
+    await channel.send({ embeds: [e], components: [row] }).catch(() => null);
+  },
+
+  components: {
+    suggestion_add: async ({ interaction, client }) => {
+      const acceptedChannel = await client.channels.fetch(SUGGESTION_ACCEPTED_CHANNEL_ID).catch(() => null);
+      if (!acceptedChannel?.isTextBased()) {
+        return interaction.reply({ content: 'Could not find the accepted suggestions channel.', ephemeral: true });
+      }
+
+      const oldEmbed = interaction.message.embeds[0];
+      const newEmbed = EmbedBuilder.from(oldEmbed)
+        .setTitle('✅ Suggestion Accepted')
+        .setTimestamp();
+
+      await acceptedChannel.send({ embeds: [newEmbed] });
+      await interaction.message.delete().catch(() => null);
+    },
+    suggestion_reject: async ({ interaction }) => {
+      const oldEmbed = interaction.message.embeds[0];
+      const newEmbed = EmbedBuilder.from(oldEmbed)
+        .setColor(COLOR_ERROR)
+        .setTitle('❌ Suggestion Rejected')
+        .setTimestamp();
+
+      await interaction.update({
+        embeds: [newEmbed],
+        components: [], // Remove buttons
+      });
+    },
   },
 };
