@@ -25,7 +25,7 @@ function buildSetupEmbed(prefix = DEFAULT_PREFIX) {
         inline: false,
       },
       {
-        name: '🚀 New: Player Onboarding',
+        name: 'New: Player Onboarding',
         value: `New to Racket? Use \`${prefix}onboarding\` or \`/onboarding\` for a quick start guide and feature overview!`,
         inline: false,
       },

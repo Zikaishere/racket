@@ -27,4 +27,11 @@ module.exports = {
     await postSetupGuide(interaction.channel, guildData?.prefix);
     return interaction.reply({ content: 'Setup wizard posted.', ephemeral: true });
   },
+
+  components: {
+    config_setup_guide: async ({ interaction, prefix }) => {
+      await postSetupGuide(interaction.channel, prefix);
+      return interaction.reply({ content: 'Setup wizard posted.', ephemeral: true });
+    }
+  }
 };
