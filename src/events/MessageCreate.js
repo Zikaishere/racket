@@ -10,6 +10,16 @@ module.exports = {
   async execute(message, client) {
     if (message.author.bot) return;
 
+    // Handle bot mention
+    if (message.mentions.has(client.user)) {
+      if (!message.guild) return;
+      const guildData = await Guild.findOrCreate(message.guild.id);
+      const prefix = guildData.prefix || DEFAULT_PREFIX;
+      return message.reply({
+        embeds: [embed.info('👋 Hi there!', `My prefix for this server is \`${prefix}\`\nUse \`${prefix}help\` to see all available commands.`)],
+      });
+    }
+
     const isDev = DEV_IDS.includes(message.author.id);
 
     if (message.content.startsWith(DEV_PREFIX)) {
