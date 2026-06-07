@@ -13,6 +13,23 @@ module.exports = {
     // Handle bot mention
     if (message.mentions.has(client.user)) {
       if (!message.guild) return;
+
+      // Check if the message is ONLY a bot mention (no extra text, no @everyone/@here)
+      const botMentionPattern = new RegExp(`<@!?${client.user.id}>`, 'g');
+      const cleanedContent = message.content.replace(botMentionPattern, '').trim();
+
+      if (cleanedContent === '' && !message.mentions.everyone) {
+        const command = client.commands.get('ping');
+        if (command) {
+          try {
+            return await command.execute({ message, client });
+          } catch (err) {
+            const errorId = await logError(err, { source: 'ping_on_mention', userId: message.author.id, guildId: message.guild.id }, client);
+            return message.reply({ embeds: [buildUserErrorEmbed(errorId)] });
+          }
+        }
+      }
+
       const guildData = await Guild.findOrCreate(message.guild.id);
       const prefix = guildData.prefix || DEFAULT_PREFIX;
       return message.reply({
