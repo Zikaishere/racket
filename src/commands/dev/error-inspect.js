@@ -4,6 +4,7 @@ const ErrorLog = require('../../models/ErrorLog');
 
 module.exports = {
   name: 'error-inspect',
+  aliases: ['errorlookup', 'errlookup', 'finderror'],
   description: 'Inspect a logged error by its ID.',
   usage: '<errorId>',
   category: 'dev',
