@@ -183,7 +183,10 @@ module.exports = {
       guildId: interaction.guild.id,
       username: interaction.user.username,
       bet: interaction.options.getInteger('bet'),
-      reply: async (data) => interaction.reply({ ...data, fetchReply: true }),
+      reply: async (data) => {
+        const response = await interaction.reply({ ...data, withResponse: true });
+        return response.resource.message;
+      },
       editReply: async (_message, data) => interaction.editReply(data),
     });
   },

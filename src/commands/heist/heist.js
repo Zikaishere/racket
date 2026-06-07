@@ -558,7 +558,6 @@ const run = async ({ userId, guildId, username, bet, reply, client, baseCooldown
   const message = await reply({
     embeds: [buildPlanningEmbed(heist)],
     components: buildControls(heist, false),
-    fetchReply: true,
   });
   heist.message = message;
   scheduleLaunch(heist, client);
@@ -603,7 +602,10 @@ module.exports = {
       guildId: interaction.guild.id,
       username: interaction.user.username,
       bet: interaction.options.getInteger('bet'),
-      reply: (data) => interaction.reply({ ...data, fetchReply: true }),
+      reply: async (data) => {
+        const response = await interaction.reply({ ...data, withResponse: true });
+        return response.resource.message;
+      },
       client: _client,
       baseCooldownMs: getGuildCooldownMs(guildData, 'heist'),
     });

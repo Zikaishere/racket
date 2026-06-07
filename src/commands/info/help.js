@@ -171,11 +171,9 @@ module.exports = {
         });
       }
     });
-    collector.on('end', () =>
-      msg.edit({ components: [] }).catch((err) => {
-        console.warn('[Help] Failed to clear components:', err.message);
-      }),
-    );
+    collector.on('end', () => {
+      msg.edit({ components: [] }).catch(() => {});
+    });
   },
 
   async executeSlash({ interaction, client }) {
@@ -212,11 +210,12 @@ module.exports = {
       return interaction.reply({ embeds: [embed.error(`No command found for \`${query}\`.`)], ephemeral: true });
     }
 
-    const msg = await interaction.reply({
+    const response = await interaction.reply({
       embeds: [buildMainEmbed(client, prefix)],
       components: [buildSelectMenu(client)],
-      fetchReply: true,
+      withResponse: true,
     });
+    const msg = response.resource.message;
 
     const collector = msg.createMessageComponentCollector({ time: 120000 });
     collector.on('collect', async (menuInteraction) => {
@@ -237,10 +236,8 @@ module.exports = {
         });
       }
     });
-    collector.on('end', () =>
-      msg.edit({ components: [] }).catch((err) => {
-        console.warn('[Help] Failed to clear components:', err.message);
-      }),
-    );
+    collector.on('end', () => {
+      msg.edit({ components: [] }).catch(() => {});
+    });
   },
 };

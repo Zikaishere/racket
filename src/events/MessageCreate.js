@@ -24,9 +24,9 @@ module.exports = {
           try {
             return await command.execute({ message, client });
           } catch (err) {
-            const errorId = await logError(err, { source: 'ping_on_mention', userId: message.author.id, guildId: message.guild.id }, client);
-            return message.reply({ embeds: [buildUserErrorEmbed(errorId)] });
+            await logError(err, { source: 'ping_on_mention', userId: message.author.id, guildId: message.guild.id }, client);
           }
+          return;
         }
       }
 

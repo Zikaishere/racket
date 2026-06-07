@@ -18,8 +18,8 @@ module.exports = {
   },
 
   async executeSlash({ interaction, client }) {
-    await interaction.reply({ embeds: [embed.info('🏓 Pinging...', 'Measuring latency...')] });
-    const reply = await interaction.fetchReply();
+    const response = await interaction.reply({ embeds: [embed.info('🏓 Pinging...', 'Measuring latency...')], withResponse: true });
+    const reply = response.resource.message;
     const latency = reply.createdTimestamp - interaction.createdTimestamp;
     const wsLatency = client.ws.ping;
     return interaction.editReply({ embeds: [buildEmbed(latency, wsLatency)] });
