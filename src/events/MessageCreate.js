@@ -10,7 +10,7 @@ module.exports = {
   async execute(message, client) {
     if (message.author.bot) return;
 
-    // Only respond when the bot is pinged directly with no other content
+    // Respond with prefix info when the bot is pinged directly
     if (message.mentions.has(client.user) && !message.mentions.everyone && !message.mentions.roles.size) {
       if (!message.guild) return;
 
@@ -18,15 +18,11 @@ module.exports = {
       const cleanedContent = message.content.replace(botMentionPattern, '').trim();
 
       if (cleanedContent === '') {
-        const command = client.commands.get('ping');
-        if (command) {
-          try {
-            return await command.execute({ message, client });
-          } catch (err) {
-            await logError(err, { source: 'ping_on_mention', userId: message.author.id, guildId: message.guild.id }, client);
-          }
-        }
-        return;
+        const guildData = await Guild.findOrCreate(message.guild.id);
+        const prefix = guildData.prefix || DEFAULT_PREFIX;
+        return message.reply({
+          embeds: [embed.info('👋 Hi there!', `My prefix for this server is \`${prefix}\`\nUse \`${prefix}help\` to see all available commands.`)],
+        });
       }
 
       return;
