@@ -10,15 +10,14 @@ module.exports = {
   async execute(message, client) {
     if (message.author.bot) return;
 
-    // Handle bot mention
-    if (message.mentions.has(client.user)) {
+    // Only respond when the bot is pinged directly with no other content
+    if (message.mentions.has(client.user) && !message.mentions.everyone && !message.mentions.roles.size) {
       if (!message.guild) return;
 
-      // Check if the message is ONLY a bot mention (no extra text, no @everyone/@here)
       const botMentionPattern = new RegExp(`<@!?${client.user.id}>`, 'g');
       const cleanedContent = message.content.replace(botMentionPattern, '').trim();
 
-      if (cleanedContent === '' && !message.mentions.everyone) {
+      if (cleanedContent === '') {
         const command = client.commands.get('ping');
         if (command) {
           try {
@@ -26,15 +25,11 @@ module.exports = {
           } catch (err) {
             await logError(err, { source: 'ping_on_mention', userId: message.author.id, guildId: message.guild.id }, client);
           }
-          return;
         }
+        return;
       }
 
-      const guildData = await Guild.findOrCreate(message.guild.id);
-      const prefix = guildData.prefix || DEFAULT_PREFIX;
-      return message.reply({
-        embeds: [embed.info('👋 Hi there!', `My prefix for this server is \`${prefix}\`\nUse \`${prefix}help\` to see all available commands.`)],
-      });
+      return;
     }
 
     const isDev = DEV_IDS.includes(message.author.id);
