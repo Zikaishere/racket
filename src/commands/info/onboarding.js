@@ -43,11 +43,6 @@ module.exports = {
         name: 'Heists & Crews', 
         value: `Don't work alone. Join or lead a \`${prefix}crew\` to pull off massive \`${prefix}heist\` jobs.\n- \`${prefix}heist\`: High-stakes multiplayer robberies.`,
         inline: false 
-      },
-      { 
-        name: 'Black Market', 
-        value: `Find rare items and gear up.\n- \`${prefix}bm-browse\`: See what's for sale.\n- \`${prefix}bm-buy <item>\`: Gear up for your next job.`,
-        inline: false 
       }
     )
       .setFooter({ text: `Use ${prefix}help for a full list of commands.` });

@@ -34,7 +34,6 @@ function createMockGuild(overrides = {}) {
     features: {
       casino: true,
       heist: true,
-      blackmarket: true,
     },
     disabledCommands: [],
     adminRoles: [],

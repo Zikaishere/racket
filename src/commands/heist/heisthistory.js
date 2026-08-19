@@ -19,15 +19,16 @@ const run = async ({ userId, guildId, targetUser, page, reply }) => {
 
   const lines = pageItems.map((entry, index) => {
     const number = (safePage - 1) * PAGE_SIZE + index + 1;
+    const icon = entry.outcome === 'success' ? '✅' : '❌';
     const payoutText = entry.payout >= 0 ? `+${fmt(entry.payout)}` : `-${fmt(Math.abs(entry.payout))}`;
-    return `**${number}.** ${entry.target} - ${entry.outcome.toUpperCase()} - **${entry.role}** - ${payoutText}\nStrategy: ${entry.strategy} | Heat: ${entry.heatLevel}`;
+    return `${icon} **${number}.** ${entry.target} — **${entry.role}** — ${payoutText}\n> Strategy: ${entry.strategy} · Heat: ${entry.heatLevel}`;
   });
 
   const historyEmbed = embed
     .raw(0x2b2d31)
     .setTitle(targetUser ? `${targetUser.username}'s Heist History` : 'Your Heist History')
     .setDescription(lines.join('\n\n'))
-    .setFooter({ text: `Page ${safePage}/${totalPages} | ${history.length} recorded heist(s)` });
+    .setFooter({ text: `Page ${safePage}/${totalPages} · ${history.length} heist(s) recorded` });
 
   return reply({ embeds: [historyEmbed] });
 };

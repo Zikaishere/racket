@@ -1,6 +1,6 @@
 # Racket Developer Guide
 
-A Discord economy bot with casino games, economy commands, heists, and a blackmarket trading system.
+A Discord economy bot with casino games, economy commands, and heists.
 
 ## Prerequisites
 
@@ -45,7 +45,6 @@ racket/
 │   ├── config.js             # Global constants
 │   ├── commands/             # All bot commands
 │   │   ├── admin/            # Server administration
-│   │   ├── blackmarket/      # Player trading
 │   │   ├── casino/          # Casino games
 │   │   ├── config/           # Server setup
 │   │   ├── dev/             # Developer commands
@@ -148,7 +147,6 @@ module.exports = {
 | -------------- | ----------------------------------------------------- |
 | `users`        | User profiles (wallet, bank, chips, stats, inventory) |
 | `guilds`       | Server settings (prefix, features, cooldowns)         |
-| `blackmarkets` | Marketplace listings for trading                      |
 | `pendinggames` | In-progress game fund reservations                    |
 | `auditlogs`    | Transaction history for auditing                      |
 | `errorlogs`    | Error tracking with unique IDs                        |

@@ -127,7 +127,7 @@ module.exports = {
       const feature = args[1]?.toLowerCase();
       const stateArg = args[2]?.toLowerCase();
       if (!feature || !stateArg)
-        return message.reply({ embeds: [embed.error('Usage: `.config feature <casino|heist|blackmarket> <on|off>`')] });
+        return message.reply({ embeds: [embed.error('Usage: `.config feature <casino|heist> <on|off>`')] });
 
       const enabled = ['on', 'true', 'enable'].includes(stateArg);
       return message.reply({ embeds: [await setFeature(message.guild.id, message.author.id, feature, enabled)] });

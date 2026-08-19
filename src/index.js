@@ -26,7 +26,6 @@ const EventHandler = require('./handlers/EventHandler.js');
 const { validateRequiredEnv } = require('./utils/startup.js');
 const { refundAllPendingGameFunds } = require('./utils/gameFunds.js');
 const User = require('./models/User');
-const BlackMarket = require('./models/BlackMarket');
 const Crew = require('./models/Crew');
 const AuditLog = require('./models/AuditLog');
 const PendingGame = require('./models/PendingGame');
@@ -76,12 +75,6 @@ async function connectDB() {
       { model: User, name: 'User.guildId_totalEarned', spec: { guildId: 1, totalEarned: -1 } },
       { model: User, name: 'User.guildId_stats.totalWagered', spec: { guildId: 1, 'stats.totalWagered': -1 } },
       { model: User, name: 'User.guildId_stats.heistsWon', spec: { guildId: 1, 'stats.heistsWon': -1 } },
-      { model: BlackMarket, name: 'BlackMarket.guildId_sold_createdAt', spec: { guildId: 1, sold: 1, createdAt: -1 } },
-      {
-        model: BlackMarket,
-        name: 'BlackMarket.sellerId_guildId_sold_createdAt',
-        spec: { sellerId: 1, guildId: 1, sold: 1, createdAt: -1 },
-      },
       { model: Crew, name: 'Crew.guildId_createdAt', spec: { guildId: 1, createdAt: -1 } },
       { model: AuditLog, name: 'AuditLog.action_createdAt', spec: { action: 1, createdAt: -1 } },
       { model: PendingGame, name: 'PendingGame.createdAt', spec: { createdAt: 1 } },

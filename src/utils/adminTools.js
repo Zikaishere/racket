@@ -8,7 +8,6 @@ const { logAudit } = require('./audit');
 const FEATURE_CHOICES = [
   { name: 'Casino', value: 'casino' },
   { name: 'Heist', value: 'heist' },
-  { name: 'Black Market', value: 'blackmarket' },
 ];
 
 const ADMIN_OVERVIEW_COMMANDS = [

@@ -8,7 +8,6 @@ const guildSchema = new mongoose.Schema({
   features: {
     casino: { type: Boolean, default: true },
     heist: { type: Boolean, default: true },
-    blackmarket: { type: Boolean, default: true },
   },
 
   // Admin roles that can use admin commands

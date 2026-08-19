@@ -17,7 +17,6 @@ const {
 const FEATURE_CHOICES = [
   { name: 'Casino', value: 'casino' },
   { name: 'Heist', value: 'heist' },
-  { name: 'Black Market', value: 'blackmarket' },
 ];
 
 const COOLDOWN_CHOICES = [
@@ -31,7 +30,6 @@ const CONFIG_CATEGORY_CHOICES = [
   { name: 'Economy', value: 'economy' },
   { name: 'Casino', value: 'casino' },
   { name: 'Heist', value: 'heist' },
-  { name: 'Black Market', value: 'blackmarket' },
   { name: 'Info', value: 'info' },
   { name: 'Admin', value: 'admin' },
   { name: 'Config', value: 'config' },
@@ -68,7 +66,6 @@ function buildStatusEmbed(guildData) {
   const enabledFeatures = [
     guildData.features?.casino === false ? null : 'casino',
     guildData.features?.heist === false ? null : 'heist',
-    guildData.features?.blackmarket === false ? null : 'blackmarket',
   ].filter(Boolean);
   const workCd = getGuildCooldownMs(guildData, 'work');
   const robCd = getGuildCooldownMs(guildData, 'rob');
@@ -88,8 +85,7 @@ function buildStatusEmbed(guildData) {
       { name: 'Prefix', value: `\`${prefix}\``, inline: true },
       { name: 'Casino', value: guildData.features?.casino === false ? 'Off' : 'On', inline: true },
       { name: 'Heist', value: guildData.features?.heist === false ? 'Off' : 'On', inline: true },
-      { name: 'Black Market', value: guildData.features?.blackmarket === false ? 'Off' : 'On', inline: true },
-      { name: 'Enabled Feature Count', value: `${enabledFeatures.length}/3`, inline: true },
+      { name: 'Enabled Feature Count', value: `${enabledFeatures.length}/2`, inline: true },
       { name: 'Disabled Command Count', value: `${disabledCommands.length}`, inline: true },
       {
         name: 'Admin Roles',
@@ -308,7 +304,6 @@ async function resetConfig(guildId, actorId) {
         prefix: DEFAULT_PREFIX,
         'features.casino': true,
         'features.heist': true,
-        'features.blackmarket': true,
         adminRoles: [],
         disabledCommands: [],
         'cooldowns.workMs': null,

@@ -7,7 +7,7 @@ function buildInfoEmbed(prefix = DEFAULT_PREFIX) {
     .raw(0xa1cf3a)
     .setTitle('Racket | General Information')
     .setDescription(
-      'Racket is a server economy bot with casino games, heists, black market trading, and admin tools for managing the experience.',
+      'Racket is a server economy bot with casino games, heists, and admin tools for managing the experience.',
     )
     .addFields(
       { name: 'Start Here', value: `Use \`${prefix}help\` or \`/help\` to browse all commands.`, inline: false },
@@ -18,7 +18,7 @@ function buildInfoEmbed(prefix = DEFAULT_PREFIX) {
       },
       {
         name: 'Features',
-        value: 'Economy, casino, heists, black market, leaderboards, and configurable server settings.',
+        value: 'Economy, casino, heists, leaderboards, and configurable server settings.',
         inline: false,
       },
       {

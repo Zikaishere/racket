@@ -46,10 +46,9 @@ const userSchema = new mongoose.Schema({
     totalWagered: { type: Number, default: 0 },
     heistsJoined: { type: Number, default: 0 },
     heistsWon: { type: Number, default: 0 },
-    blackmarketSales: { type: Number, default: 0 },
   },
 
-  // Inventory (black market items)
+  // Inventory
   inventory: [
     {
       itemId: String,
@@ -59,7 +58,7 @@ const userSchema = new mongoose.Schema({
       description: { type: String, default: 'No description.' },
       quantity: { type: Number, default: 1 },
       estimatedValue: { type: Number, default: 0 },
-      source: { type: String, default: 'blackmarket' },
+      source: { type: String, default: 'shop' },
       stackable: { type: Boolean, default: true },
       stats: {
         strength: { type: Number, default: 0 },

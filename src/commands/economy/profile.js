@@ -52,7 +52,6 @@ const run = async ({ userId, guildId, targetUser, reply, guildData }) => {
     { name: 'Win Rate', value: winRate, inline: true },
     { name: 'Total Wagered', value: fmt(user.stats.totalWagered), inline: true },
     { name: 'Heists', value: `${user.stats.heistsWon} wins / ${user.stats.heistsJoined} joined`, inline: true },
-    { name: 'Black Market Sales', value: `${user.stats.blackmarketSales}`, inline: true },
     {
       name: 'Inventory Items',
       value: `${user.inventory.reduce((sum, item) => sum + item.quantity, 0)}`,

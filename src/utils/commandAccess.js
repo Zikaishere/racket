@@ -1,12 +1,11 @@
 function getFeatureKey(command) {
   if (command?.category === 'casino') return 'casino';
   if (command?.category === 'heist') return 'heist';
-  if (command?.category === 'blackmarket') return 'blackmarket';
   return null;
 }
 
 function isRestrictedCategory(command) {
-  return ['economy', 'casino', 'heist', 'blackmarket'].includes(command?.category);
+  return ['economy', 'casino', 'heist'].includes(command?.category);
 }
 
 function isCommandDisabled(guildData, command) {

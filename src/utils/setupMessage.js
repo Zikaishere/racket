@@ -21,7 +21,7 @@ function buildSetupEmbed(prefix = DEFAULT_PREFIX) {
       },
       {
         name: '5. Toggle features or commands',
-        value: `Use \`${prefix}config feature <casino|heist|blackmarket> <on|off>\` or \`${prefix}config command <name> <on|off>\`.`,
+        value: `Use \`${prefix}config feature <casino|heist> <on|off>\` or \`${prefix}config command <name> <on|off>\`.`,
         inline: false,
       },
       {
