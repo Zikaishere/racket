@@ -6,7 +6,7 @@ module.exports = {
   aliases: ['si', 'server'],
   description: 'Display information about the current server.',
   usage: '',
-  category: 'info',
+  category: 'utility',
   guildOnly: true,
 
   slash: new SlashCommandBuilder().setName('serverinfo').setDescription('Display information about the current server'),

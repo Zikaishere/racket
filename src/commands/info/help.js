@@ -16,6 +16,7 @@ const CATEGORY_ICONS = {
   admin: '\u2699\uFE0F',
   config: '\uD83D\uDEE0\uFE0F',
   info: '\u2139\uFE0F',
+  utility: '\uD83D\uDEE0\uFE0F',
 };
 
 const CATEGORY_DESCRIPTIONS = {
@@ -27,6 +28,7 @@ const CATEGORY_DESCRIPTIONS = {
   admin: 'Server admin tools',
   config: 'Server setup and configuration tools',
   info: 'Bot information',
+  utility: 'Tools and utilities',
 };
 
 function buildMainEmbed(client, prefix) {

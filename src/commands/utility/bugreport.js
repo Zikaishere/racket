@@ -7,7 +7,7 @@ module.exports = {
   aliases: ['bugreport', 'bug'],
   description: 'Report a bug or issue to the developers.',
   usage: '<description> [error_id]',
-  category: 'info',
+  category: 'utility',
 
   slash: new SlashCommandBuilder()
     .setName('bug-report')

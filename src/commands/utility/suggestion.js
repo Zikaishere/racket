@@ -7,7 +7,7 @@ module.exports = {
   aliases: ['suggest'],
   description: 'Send a suggestion to the developers.',
   usage: '<your suggestion>',
-  category: 'info',
+  category: 'utility',
 
   slash: new SlashCommandBuilder()
     .setName('suggestion')

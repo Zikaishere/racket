@@ -6,7 +6,7 @@ module.exports = {
   aliases: ['guide', 'start', 'begin'],
   description: 'A comprehensive guide to getting started with Racket.',
   usage: '',
-  category: 'info',
+  category: 'utility',
   guildOnly: true,
 
   slash: new SlashCommandBuilder()
