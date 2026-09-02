@@ -59,6 +59,10 @@ function tickStep(range, targetTicks) {
 
 // Draw axes gridlines, y labels, and x time labels. Returns the plot rect.
 function drawCanvas(ctx, opts) {
+  const canvas = ctx.canvas;
+  const W = canvas.width;
+  const H = canvas.height;
+
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, W, H);
 
@@ -79,10 +83,10 @@ function drawCanvas(ctx, opts) {
 
   const top = opts.subtitle ? 92 : 64;
   const padL = 90;
-  const padR = 30;
-  const padB = 44;
+  const padR = opts.legendW || 30;
+  const padB = opts.padB || 44;
 
-  const rect = { x: padL, y: top, w: W - padL - padR, h: H - top - padB };
+  const rect = { x: padL, y: top, w: W - padL - padR, h: H - top - padB, right: W - padR };
 
   // Horizontal gridlines + y labels
   const dataRange = opts.max - opts.min;
@@ -182,21 +186,24 @@ function plotLine(ctx, rect, series, opts) {
   ctx.fill();
 }
 
-function drawLegend(ctx, items, rect) {
-  let x = rect.x;
-  const y = rect.y + rect.h + 40;
-  ctx.font = `11px ${FONT}`;
-  const gap = 20;
-  items.forEach((it) => {
-    const tw = ctx.measureText(it.label).width;
-    const itemW = 12 + 6 + tw;
-    if (x + itemW > rect.x + rect.w) x = rect.x;
+// Right-side legend with a color swatch and (optional) value per row.
+function drawVerticalLegend(ctx, items, rect) {
+  const rowH = 26;
+  const x = rect.right + 22;
+  items.forEach((it, i) => {
+    const y = rect.y + 16 + i * rowH;
     ctx.fillStyle = it.color;
-    ctx.fillRect(x, y - 8, 12, 3);
-    x += 16;
+    ctx.fillRect(x, y - 9, 14, 4);
     ctx.fillStyle = CHART_TEXT;
-    ctx.fillText(it.label, x, y);
-    x += tw + gap;
+    ctx.font = `bold 13px ${FONT}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(it.label, x + 20, y);
+    if (it.value != null) {
+      ctx.font = `11px ${FONT}`;
+      ctx.fillStyle = it.valueColor || CHART_MUTED;
+      ctx.textAlign = 'right';
+      ctx.fillText(it.value, rect.right + 230, y);
+    }
   });
 }
 
@@ -233,6 +240,13 @@ async function renderSingleStockChart(stock, history) {
   return canvas.toBuffer('image/png');
 }
 
+// Font color helper consistent with the theme.
+function valueColor(v) {
+  if (v > 0.01) return '#a1cf3a';
+  if (v < -0.01) return '#e57373';
+  return CHART_MUTED;
+}
+
 async function renderComparisonChart(all) {
   // Normalize each stock to % change from its first point.
   const maxLen = Math.max(...all.map((s) => s.history.length));
@@ -256,11 +270,20 @@ async function renderComparisonChart(all) {
       if (v > max) max = v;
     });
   });
-  const pad = (max - min) * 0.12 || 1;
-  min -= pad;
-  max += pad;
+  // Extend the range a bit so the 0% baseline is not pinned to an edge.
+  const span = max - min;
+  const extra = span * 0.3 || 2;
+  min -= span * 0.12;
+  max += span * 0.12;
+  if (0 > min + extra) min = -extra;
+  if (0 < max - extra) max = extra;
 
-  const canvas = createCanvas(W, H);
+  // Taller canvas: reserve the right ~260px as a dedicated legend column.
+  const CMP_W = 1200;
+  const CMP_H = 560;
+  const legendW = 260;
+
+  const canvas = createCanvas(CMP_W, CMP_H);
   const ctx = canvas.getContext('2d');
 
   const rect = drawCanvas(ctx, {
@@ -268,8 +291,24 @@ async function renderComparisonChart(all) {
     labels,
     min,
     max,
-    formatY: (v) => `${Math.round(v)}%`,
+    legendW,
+    padB: 44,
+    formatY: (v) => `${v > 0 && v < 10 ? v.toFixed(1) : Math.round(v)}%`,
   });
+
+  // Subtle zero baseline.
+  if (min < 0 && max > 0) {
+    const frac = (0 - min) / (max - min);
+    const y0 = rect.y + rect.h - frac * rect.h;
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(rect.x, y0);
+    ctx.lineTo(rect.right, y0);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
 
   series.forEach((s, i) => {
     plotLine(ctx, rect, s, {
@@ -281,9 +320,19 @@ async function renderComparisonChart(all) {
     });
   });
 
-  drawLegend(
+  // Right-side legend with each ticker's current % change.
+  drawVerticalLegend(
     ctx,
-    all.map((item, i) => ({ color: colorForIndex(i), label: item.ticker })),
+    all.map((item, i) => {
+      const s = series[i];
+      const last = s ? s[s.length - 1] : 0;
+      return {
+        color: colorForIndex(i),
+        label: item.ticker,
+        value: `${last >= 0 ? '+' : ''}${last.toFixed(1)}%`,
+        valueColor: valueColor(last),
+      };
+    }),
     rect,
   );
 
