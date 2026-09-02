@@ -186,27 +186,6 @@ function plotLine(ctx, rect, series, opts) {
   ctx.fill();
 }
 
-// Right-side legend with a color swatch and (optional) value per row.
-function drawVerticalLegend(ctx, items, rect) {
-  const rowH = 26;
-  const x = rect.right + 22;
-  items.forEach((it, i) => {
-    const y = rect.y + 16 + i * rowH;
-    ctx.fillStyle = it.color;
-    ctx.fillRect(x, y - 9, 14, 4);
-    ctx.fillStyle = CHART_TEXT;
-    ctx.font = `bold 13px ${FONT}`;
-    ctx.textAlign = 'left';
-    ctx.fillText(it.label, x + 20, y);
-    if (it.value != null) {
-      ctx.font = `11px ${FONT}`;
-      ctx.fillStyle = it.valueColor || CHART_MUTED;
-      ctx.textAlign = 'right';
-      ctx.fillText(it.value, rect.right + 230, y);
-    }
-  });
-}
-
 async function renderSingleStockChart(stock, history) {
   const prices = history.map((p) => p.price);
   const labels = history.map((p) => timeLabel(p.t));
@@ -240,101 +219,188 @@ async function renderSingleStockChart(stock, history) {
   return canvas.toBuffer('image/png');
 }
 
-// Font color helper consistent with the theme.
-function valueColor(v) {
-  if (v > 0.01) return '#a1cf3a';
-  if (v < -0.01) return '#e57373';
-  return CHART_MUTED;
-}
-
+// Faceted "market by sector" comparison chart.
+// each input item: { ticker, name, sector, history: [{ price, t }] }
 async function renderComparisonChart(all) {
-  // Normalize each stock to % change from its first point.
-  const maxLen = Math.max(...all.map((s) => s.history.length));
-  // Use a reference time series for x labels.
-  const ref = all.find((s) => s.history.length === maxLen);
-  const labels = [];
-  for (let i = 0; i < maxLen; i++) {
-    labels[i] = timeLabel(ref ? ref.history[i]?.t : 0);
-  }
+  const sectorOrder = Object.keys(SECTOR_LABELS);
+  const tickerColor = new Map(all.map((s, i) => [s.ticker, colorForIndex(i)]));
 
-  const series = all.map((item) => {
-    const first = item.history[0] ? item.history[0].price : 0;
-    return item.history.map((p) => (first ? ((p.price - first) / first) * 100 : 0));
+  // Normalize each stock to % change from its first point.
+  const items = all.map((s) => {
+    const first = s.history[0] ? s.history[0].price : 0;
+    return {
+      ticker: s.ticker,
+      sector: s.sector,
+      color: tickerColor.get(s.ticker),
+      data: s.history.map((p) => (first ? ((p.price - first) / first) * 100 : 0)),
+    };
   });
 
+  // Shared % range across ALL sectors so panels are directly comparable.
   let min = 0;
   let max = 0;
-  series.forEach((s) => {
-    s.forEach((v) => {
+  for (const it of items)
+    for (const v of it.data) {
       if (v < min) min = v;
       if (v > max) max = v;
-    });
-  });
-  // Extend the range a bit so the 0% baseline is not pinned to an edge.
-  const span = max - min;
-  const extra = span * 0.3 || 2;
-  min -= span * 0.12;
-  max += span * 0.12;
-  if (0 > min + extra) min = -extra;
-  if (0 < max - extra) max = extra;
+    }
+  const span = Math.max(max - min, 1);
+  // Force 0% baseline inside the visible range on both sides.
+  min -= span * 0.25;
+  max += span * 0.25;
 
-  // Taller canvas: reserve the right ~260px as a dedicated legend column.
-  const CMP_W = 1200;
-  const CMP_H = 560;
-  const legendW = 260;
-
-  const canvas = createCanvas(CMP_W, CMP_H);
-  const ctx = canvas.getContext('2d');
-
-  const rect = drawCanvas(ctx, {
-    title: 'Market Comparison — % Change Over Period',
-    labels,
-    min,
-    max,
-    legendW,
-    padB: 44,
-    formatY: (v) => `${v > 0 && v < 10 ? v.toFixed(1) : Math.round(v)}%`,
-  });
-
-  // Subtle zero baseline.
-  if (min < 0 && max > 0) {
-    const frac = (0 - min) / (max - min);
-    const y0 = rect.y + rect.h - frac * rect.h;
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(rect.x, y0);
-    ctx.lineTo(rect.right, y0);
-    ctx.stroke();
-    ctx.setLineDash([]);
+  // Group by sector, ordered by SECTOR_LABELS then insertion order.
+  const groups = new Map();
+  for (const it of items) {
+    if (!groups.has(it.sector)) groups.set(it.sector, []);
+    groups.get(it.sector).push(it);
   }
-
-  series.forEach((s, i) => {
-    plotLine(ctx, rect, s, {
-      color: colorForIndex(i),
-      lineWidth: 2,
-      min,
-      max,
-      fill: false,
-    });
+  const sectorKeys = [...groups.keys()].sort((a, b) => {
+    const ia = sectorOrder.indexOf(a);
+    const ib = sectorOrder.indexOf(b);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
   });
 
-  // Right-side legend with each ticker's current % change.
-  drawVerticalLegend(
-    ctx,
-    all.map((item, i) => {
-      const s = series[i];
-      const last = s ? s[s.length - 1] : 0;
-      return {
-        color: colorForIndex(i),
-        label: item.ticker,
-        value: `${last >= 0 ? '+' : ''}${last.toFixed(1)}%`,
-        valueColor: valueColor(last),
-      };
-    }),
-    rect,
-  );
+  // Responsive grid of panels (2 columns). Rows grow as sectors are added.
+  const COLS = 2;
+  const ROWS = Math.ceil(sectorKeys.length / COLS);
+  const cellW = 610;
+  const cellH = 240;
+  const headerH = 42;
+  const margin = { l: 20, t: 76, r: 20, b: 16 };
+
+  const canvas = createCanvas(margin.l + COLS * cellW + margin.r, margin.t + ROWS * cellH + margin.b);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Main title + subtitle.
+  ctx.fillStyle = '#e8edf3';
+  ctx.font = `bold 22px ${FONT}`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('Market Performance by Sector', margin.l, 36);
+  ctx.fillStyle = CHART_MUTED;
+  ctx.font = `13px ${FONT}`;
+  ctx.fillText('% change over the period · one panel per sector', margin.l + 2, 56);
+
+  // Shared y tick step used by every panel.
+  const yStep = tickStep(max - min, 4);
+
+  sectorKeys.forEach((sec, idx) => {
+    const row = Math.floor(idx / COLS);
+    const col = idx % COLS;
+    const x0 = margin.l + col * cellW;
+    const y0 = margin.t + row * cellH;
+    const g = groups.get(sec);
+
+    // Panel background.
+    ctx.fillStyle = 'rgba(255,255,255,0.025)';
+    ctx.fillRect(x0, y0, cellW, cellH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.strokeRect(x0, y0, cellW, cellH);
+
+    // Sector header.
+    ctx.fillStyle = '#e8edf3';
+    ctx.font = `bold 15px ${FONT}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(SECTOR_LABELS[sec] || sec, x0 + 10, y0 + 26);
+
+    // Plot rect inside the panel.
+    const padL = 56;
+    const padB = 26;
+    const px = x0 + padL;
+    const py = y0 + headerH;
+    const pw = cellW - padL - 46;
+    const ph = cellH - headerH - padB;
+
+    // Horizontal gridlines + y labels (labels on the leftmost column only).
+    const firstTick = Math.ceil(min / yStep) * yStep;
+    for (let v = firstTick; v <= max + 1e-9; v += yStep) {
+      const frac = (v - min) / (max - min);
+      const y = py + ph - frac * ph;
+      ctx.strokeStyle = CHART_GRID;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(px, y);
+      ctx.lineTo(px + pw, y);
+      ctx.stroke();
+      if (col === 0) {
+        ctx.fillStyle = CHART_TEXT;
+        ctx.font = `11px ${FONT}`;
+        ctx.textAlign = 'right';
+        ctx.fillText(`${v > 0 && v < 10 ? v.toFixed(1) : Math.round(v)}%`, px - 8, y + 4);
+      }
+    }
+
+    // Dashed 0% baseline.
+    if (min < 0 && max > 0) {
+      const frac = (0 - min) / (max - min);
+      const y0p = py + ph - frac * ph;
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(px, y0p);
+      ctx.lineTo(px + pw, y0p);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Vertical gridlines + x time labels (bottom row only).
+    const maxTicks = Math.min(8, pw / 70);
+    const nMax = Math.max(...g.map((it) => it.data.length));
+    const sStep = nMax > maxTicks ? Math.ceil(nMax / maxTicks) : 1;
+    const ref = all.find((s) => s.ticker === g[0].ticker);
+    for (let i = 0; i < nMax; i += sStep) {
+      const x = px + (i / Math.max(nMax - 1, 1)) * pw;
+      ctx.strokeStyle = CHART_GRID;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, py);
+      ctx.lineTo(x, py + ph);
+      ctx.stroke();
+      if (row === ROWS - 1 && ref && ref.history[i]) {
+        ctx.fillStyle = CHART_TEXT;
+        ctx.font = `10px ${FONT}`;
+        ctx.textAlign = 'center';
+        ctx.fillText(timeLabel(ref.history[i].t), x, py + ph + 16);
+      }
+    }
+
+    // Draw each stock's line, then direct-label it at the line's end.
+    for (const it of g) {
+      const n = it.data.length;
+      if (n === 0) continue;
+      const xs = [];
+      const ys = [];
+      for (let i = 0; i < n; i++) {
+        const xval = px + (i / Math.max(n - 1, 1)) * pw;
+        const frac = (it.data[i] - min) / (max - min);
+        const yp = py + ph - frac * ph;
+        xs.push(xval);
+        ys.push(yp);
+      }
+      ctx.beginPath();
+      ctx.moveTo(xs[0], ys[0]);
+      for (let i = 1; i < n; i++) ctx.lineTo(xs[i], ys[i]);
+      ctx.strokeStyle = it.color;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      const ex = xs[n - 1];
+      const ey = ys[n - 1];
+      ctx.fillStyle = it.color;
+      ctx.beginPath();
+      ctx.arc(ex, ey, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Ticker label directly at the end of the line (the "best" axis label).
+      ctx.font = `bold 12px ${FONT}`;
+      ctx.textAlign = 'left';
+      ctx.fillText(it.ticker, ex + 7, ey + 4);
+    }
+  });
 
   return canvas.toBuffer('image/png');
 }

@@ -38,7 +38,7 @@ const run = async ({ reply }) => {
     const all = [];
     for (const stock of STOCKS) {
       const hist = await getHistory(stock.ticker, 60);
-      if (hist.length >= 2) all.push({ ticker: stock.ticker, history: hist });
+      if (hist.length >= 2) all.push({ ticker: stock.ticker, sector: stock.sector, history: hist });
     }
     if (all.length >= 2) {
       const buffer = await renderComparisonChart(all);
