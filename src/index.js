@@ -4,12 +4,12 @@ const fs = require('fs');
 if (process.env.AUTO_UPDATE === '1') {
   try {
     console.log('Pulling latest from GitHub...');
-    
+
     if (!fs.existsSync('.git')) {
       console.log('Initializing git repository...');
       execSync('git init && git remote add origin https://github.com/Zikaishere/racket.git', { stdio: 'inherit' });
     }
-    
+
     execSync('git fetch origin main && git reset --hard origin/main', { stdio: 'inherit' });
     console.log('Installing dependencies...');
     execSync('npm install', { stdio: 'inherit' });
@@ -29,6 +29,7 @@ const User = require('./models/User');
 const Crew = require('./models/Crew');
 const AuditLog = require('./models/AuditLog');
 const PendingGame = require('./models/PendingGame');
+const MarketManager = require('./market/MarketManager');
 const { logError } = require('./utils/errorManager.js');
 
 const envErrors = validateRequiredEnv(process.env);
@@ -96,6 +97,14 @@ async function connectDB() {
 }
 
 connectDB().then(() => {
+  // Start the simulated stock market
+  MarketManager.initialize()
+    .then(() => {
+      console.log('📈 Stock market initialized');
+      MarketManager.start();
+    })
+    .catch((err) => console.error('Failed to initialize stock market:', err));
+
   client.login(process.env.BOT_TOKEN).catch((err) => {
     console.error('Login failed:', err);
     process.exit(1);

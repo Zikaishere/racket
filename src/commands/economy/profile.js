@@ -3,6 +3,7 @@ const embed = require('../../utils/embed');
 const { getUser, fmt } = require('../../utils/economy');
 const { DAILY_COOLDOWN, WORK_COOLDOWN, ROB_COOLDOWN } = require('../../config');
 const { getGuildCooldownMs } = require('../../utils/guildCooldowns');
+const { JOBS, getJobTierName } = require('../../data/jobs');
 
 function formatRemaining(targetDate, cooldown) {
   const last = targetDate ? new Date(targetDate).getTime() : 0;
@@ -69,6 +70,17 @@ const run = async ({ userId, guildId, targetUser, reply, guildData }) => {
     { name: 'Work', value: formatRemaining(user.lastWork, workCooldown), inline: true },
     { name: 'Rob', value: formatRemaining(user.lastRob, robCooldown), inline: true },
   );
+
+  if (user.currentJob) {
+    const job = JOBS.find((j) => j.id === user.currentJob);
+    const jobLabel = job ? `${job.emoji} ${job.name}` : user.currentJob;
+    const tierName = job ? getJobTierName(job, user.jobTier) : `T${user.jobTier}`;
+    const jobCooldown = job ? job.cooldown : WORK_COOLDOWN;
+    e.addFields(
+      { name: 'Career', value: `${jobLabel} (${tierName})`, inline: true },
+      { name: 'Job Cooldown', value: formatRemaining(user.lastJobWork, jobCooldown), inline: true },
+    );
+  }
 
   if (user.moderation?.frozen) {
     e.addFields({

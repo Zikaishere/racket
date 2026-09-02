@@ -1,0 +1,209 @@
+const { SlashCommandBuilder } = require('discord.js');
+const embed = require('../../utils/embed');
+const User = require('../../models/User');
+const { getUser, fmt } = require('../../utils/economy');
+const { logAudit } = require('../../utils/audit');
+const { JOBS, getSalary, getJobTierName, getTierName, getWorksForPromotion } = require('../../data/jobs');
+
+const WORK_FLAVOR = {
+  pickpocket: ['lifted a fat wallet', 'worked a busy market', 'stole a watch off a mark', 'picked a tourist clean'],
+  street_hustler: [
+    'made a quick deal on the corner',
+    'ran a street scam',
+    'picked up a package from a contact',
+    'collected from a debtor',
+  ],
+  courier: [
+    'delivered a mystery package',
+    'ran a midnight delivery',
+    'smuggled a care package across town',
+    'dropped off a sealed envelope',
+  ],
+  bouncer: [
+    'worked the door at a club',
+    'escorted a rowdy patron out',
+    'patrolled the parking lot',
+    'stood watch all night',
+  ],
+  mechanic: [
+    'tuned up an engine',
+    'fixed a brake line',
+    'rebuilt a transmission',
+    'diagnosed a tricky electrical issue',
+  ],
+  bartender: [
+    'mixed cocktails for a packed bar',
+    'served the regulars',
+    'ran a tab for a big spender',
+    'invented a new drink special',
+  ],
+  locksmith: ['picked a stubborn lock', 'cracked an old safe', 'rekeyed a storefront', 'bypassed a deadbolt'],
+  dealer: [
+    'dealt a hot streak at the blackjack table',
+    'ran the poker room',
+    'managed the high-roller pit',
+    'kept the games flowing',
+  ],
+  enforcer: ['delivered a message', 'escorted a shipment', 'resolved a dispute', 'made sure things ran smoothly'],
+  smuggler: [
+    'ran a load across the border',
+    'stashed a shipment under a false floor',
+    'bribed a checkpoint guard',
+    'moved product through the docks',
+  ],
+  hacker: ['breached a firewall', 'ransomed some data', 'ran a phishing op', 'cracked a secure network'],
+  surveillance: [
+    'staked out a rival crew',
+    'tapped a phone line',
+    'reviewed security footage',
+    'planted a listening device',
+  ],
+  lawyer: [
+    'won a tough case',
+    'settled out of court',
+    'buried the prosecution in motions',
+    'defended a high-profile client',
+  ],
+  accountant: [
+    'cooked the books for a client',
+    'hid a fortune in shell companies',
+    'balanced a shady ledger',
+    'laundered a payout through paper trails',
+  ],
+  fixer: [
+    'made a problem disappear',
+    'brokered a deal between rivals',
+    'arranged a clean exit',
+    'connected the right people',
+  ],
+  consigliere: [
+    'counseled the boss on a merger',
+    'settled an internal dispute',
+    'orchestrated a power move',
+    'kept the family organized',
+  ],
+};
+
+const run = async ({ userId, guildId, reply }) => {
+  const user = await getUser(userId, guildId);
+
+  if (!user.currentJob) {
+    return reply({
+      embeds: [embed.warning('Unemployed', "You don't have a job. Use `/jobs` to browse careers.")],
+      ephemeral: true,
+    });
+  }
+
+  const job = JOBS.find((j) => j.id === user.currentJob);
+  if (!job) {
+    return reply({
+      embeds: [embed.error('Your job data is invalid. Contact an admin.')],
+      ephemeral: true,
+    });
+  }
+
+  const cooldownMs = job.cooldown || 60 * 60 * 1000;
+
+  if (user.lastJobWork) {
+    const elapsed = Date.now() - new Date(user.lastJobWork).getTime();
+    if (elapsed < cooldownMs) {
+      const remaining = cooldownMs - elapsed;
+      const mins = Math.ceil(remaining / 60000);
+      return reply({
+        embeds: [embed.warning('Still Working', `You're still on the clock. Come back in **${mins}m**.`)],
+        ephemeral: true,
+      });
+    }
+  }
+
+  const salary = getSalary(job, user.jobTier);
+  const flavors = WORK_FLAVOR[job.id] || ['did some work'];
+  const flavor = flavors[Math.floor(Math.random() * flavors.length)];
+
+  const worksForPromo = getWorksForPromotion(user.jobTier);
+  const nextWorks = user.jobWorks + 1;
+  const gettingPromoted = worksForPromo && nextWorks >= worksForPromo;
+  const nextTier = gettingPromoted ? user.jobTier + 1 : user.jobTier;
+
+  const updateOps = {
+    $set: { lastJobWork: new Date() },
+    $inc: { wallet: salary, balance: salary, totalEarned: salary, jobWorks: 1 },
+  };
+
+  if (gettingPromoted) {
+    updateOps.$set.jobTier = nextTier;
+    updateOps.$set.jobWorks = 0;
+    updateOps.$inc = { wallet: salary, balance: salary, totalEarned: salary };
+  }
+
+  const filter = {
+    userId,
+    guildId,
+    currentJob: job.id,
+    $or: [{ lastJobWork: null }, { lastJobWork: { $lte: new Date(Date.now() - cooldownMs) } }],
+  };
+
+  const updated = await User.findOneAndUpdate(filter, updateOps, { new: true });
+
+  if (!updated) {
+    return reply({
+      embeds: [embed.error('Failed to process work. Your account may be frozen.')],
+      ephemeral: true,
+    });
+  }
+
+  await logAudit({
+    guildId,
+    actorId: userId,
+    targetId: userId,
+    action: 'job_work',
+    amount: salary,
+    currency: 'wallet',
+    metadata: { job: job.id, tier: user.jobTier, promoted: gettingPromoted },
+  });
+
+  let message = `You ${flavor} as a **${getJobTierName(job, user.jobTier)} ${job.name}** and earned ${fmt(salary)}.`;
+
+  if (gettingPromoted) {
+    const newTierName = getJobTierName(job, nextTier);
+    const newTierLabel = getTierName(nextTier);
+    const newSalary = getSalary(job, nextTier);
+    message += `\n\n🎉 **PROMOTED!** You are now a **${newTierName}** (${newTierLabel}).\nNew salary: ${fmt(newSalary)}`;
+  } else if (worksForPromo) {
+    const remaining = worksForPromo - nextWorks;
+    message += `\n\nPromotion progress: ${nextWorks}/${worksForPromo} (${remaining} more to promote)`;
+  }
+
+  message += `\n\nCash: ${fmt(updated.wallet)}`;
+
+  return reply({
+    embeds: [embed.success('Work Complete', message)],
+  });
+};
+
+module.exports = {
+  name: 'job-work',
+  aliases: ['jwork'],
+  description: 'Work your career job for a salary.',
+  usage: '',
+  category: 'economy',
+  guildOnly: true,
+
+  slash: new SlashCommandBuilder().setName('job-work').setDescription('Work your career job for a salary'),
+
+  async execute({ message }) {
+    return run({
+      userId: message.author.id,
+      guildId: message.guild.id,
+      reply: (data) => message.reply(data),
+    });
+  },
+
+  async executeSlash({ interaction }) {
+    return run({
+      userId: interaction.user.id,
+      guildId: interaction.guild.id,
+      reply: (data) => interaction.reply(data),
+    });
+  },
+};

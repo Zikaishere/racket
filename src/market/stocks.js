@@ -1,0 +1,186 @@
+const STOCKS = [
+  {
+    ticker: 'RAQ',
+    name: 'Racket Industries',
+    sector: 'tech',
+    basePrice: 100,
+    volatility: 0.03,
+    description: 'The conglomerate behind half the city. Steady, reliable, blue chip.',
+  },
+  {
+    ticker: 'VOX',
+    name: 'Vortex Telecom',
+    sector: 'tech',
+    basePrice: 75,
+    volatility: 0.05,
+    description: 'The wires everyone talks through. Data is the new gold.',
+  },
+  {
+    ticker: 'NEON',
+    name: 'Neon Nightlife',
+    sector: 'casino',
+    basePrice: 40,
+    volatility: 0.07,
+    description: 'Owns the clubs, the bars, and the back rooms. High glamour, high swings.',
+  },
+  {
+    ticker: 'ACE',
+    name: 'Ace Royal Casinos',
+    sector: 'casino',
+    basePrice: 120,
+    volatility: 0.04,
+    description: 'The house always wins. So does the stock.',
+  },
+  {
+    ticker: 'IRON',
+    name: 'Iron Anchor Shipping',
+    sector: 'trade',
+    basePrice: 55,
+    volatility: 0.04,
+    description: 'Every crate in the harbor bears their mark. Slow but solid.',
+  },
+  {
+    ticker: 'SMOKE',
+    name: 'Smokehouse Distillery',
+    sector: 'trade',
+    basePrice: 30,
+    volatility: 0.06,
+    description: 'Bootlegging brandy for three generations. Small but feisty.',
+  },
+  {
+    ticker: 'VANTA',
+    name: 'Vanta Security',
+    sector: 'service',
+    basePrice: 90,
+    volatility: 0.035,
+    description: 'Guards, alarms, and muscle on retainer. Everyone needs protection.',
+  },
+  {
+    ticker: 'GOLD',
+    name: 'Goldtooth Medical',
+    sector: 'service',
+    basePrice: 65,
+    volatility: 0.05,
+    description: 'Physicians who never ask questions. Doctors with discretion.',
+  },
+  {
+    ticker: 'GRAVE',
+    name: 'Gravedigger Rail',
+    sector: 'street',
+    basePrice: 15,
+    volatility: 0.09,
+    description: 'Penny stock that moves like a bullet. High risk, high thrill.',
+  },
+  {
+    ticker: 'CHAR',
+    name: 'Charcoal Fences',
+    sector: 'underworld',
+    basePrice: 50,
+    volatility: 0.06,
+    description: 'The unofficial exchange for everything stolen or strange.',
+  },
+  {
+    ticker: 'PUPPET',
+    name: 'Puppet Media',
+    sector: 'tech',
+    basePrice: 110,
+    volatility: 0.045,
+    description: 'They control the narrative. And what you think about it.',
+  },
+  {
+    ticker: 'COLD',
+    name: 'Cold Storage Vaults',
+    sector: 'underworld',
+    basePrice: 85,
+    volatility: 0.05,
+    description: 'Where fortunes go to hide. Discreet storage for the wealthy.',
+  },
+];
+
+const SECTOR_LABELS = {
+  tech: 'Tech',
+  casino: 'Casino',
+  trade: 'Trade',
+  service: 'Service',
+  street: 'Street',
+  underworld: 'Underworld',
+  corporate: 'Corporate',
+};
+
+// Market behavior tuning
+const TICK_INTERVAL_MS = 60 * 1000; // 1 tick per minute
+const PRICE_MIN_FACTOR = 0.4; // price can't fall below 40% of base
+const PRICE_MAX_FACTOR = 3.0; // price can't rise above 300% of base
+const MEAN_REVERSION_STRENGTH = 0.02; // pull back toward base each tick
+const EVENT_CHANCE = 0.12; // ~12% chance of a market event each tick
+
+// Economic events pool: { type, label, sector?, stock?, intensity, description }
+const EVENTS = [
+  {
+    type: 'boom',
+    label: 'Economic Boom',
+    sector: null,
+    intensity: 0.04,
+    description: 'The whole market surges on a wave of confidence.',
+  },
+  {
+    type: 'crash',
+    label: 'Market Crash',
+    sector: null,
+    intensity: -0.04,
+    description: 'Panic selling grips the market, dragging everything down.',
+  },
+  {
+    type: 'product_launch',
+    label: 'Product Launch',
+    sector: null,
+    intensity: 0.08,
+    description: 'A blockbuster product launch sends shares soaring.',
+  },
+  {
+    type: 'poor_earnings',
+    label: 'Poor Earnings',
+    sector: null,
+    intensity: -0.06,
+    description: 'Disappointing earnings report weighs on the stock.',
+  },
+  {
+    type: 'growth',
+    label: 'Company Growth',
+    sector: null,
+    intensity: 0.05,
+    description: 'Aggressive expansion impresses investors.',
+  },
+  {
+    type: 'scandal',
+    label: 'Scandal',
+    sector: null,
+    intensity: -0.07,
+    description: 'A scandal breaks, and the stock takes a hit.',
+  },
+  {
+    type: 'industry_rise',
+    label: 'Industry Growth',
+    sector: null,
+    intensity: 0.05,
+    description: 'The whole sector experiences a surge in demand.',
+  },
+  {
+    type: 'industry_decline',
+    label: 'Industry Decline',
+    sector: null,
+    intensity: -0.05,
+    description: 'The entire sector cools down.',
+  },
+];
+
+module.exports = {
+  STOCKS,
+  SECTOR_LABELS,
+  TICK_INTERVAL_MS,
+  PRICE_MIN_FACTOR,
+  PRICE_MAX_FACTOR,
+  MEAN_REVERSION_STRENGTH,
+  EVENT_CHANCE,
+  EVENTS,
+};

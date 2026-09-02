@@ -5,7 +5,7 @@ function getFeatureKey(command) {
 }
 
 function isRestrictedCategory(command) {
-  return ['economy', 'casino', 'heist'].includes(command?.category);
+  return ['economy', 'casino', 'heist', 'jobs', 'stocks'].includes(command?.category);
 }
 
 function isCommandDisabled(guildData, command) {

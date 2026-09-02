@@ -18,6 +18,13 @@ const userSchema = new mongoose.Schema({
   heistCooldownUntil: { type: Date, default: null },
   wantedUntil: { type: Date, default: null },
 
+  // Career
+  currentJob: { type: String, default: null },
+  jobTier: { type: Number, default: 0 },
+  jobWorks: { type: Number, default: 0 },
+  lastJobWork: { type: Date, default: null },
+  lastJobChange: { type: Date, default: null },
+
   // Casino Profile
   casinoRank: { type: String, default: 'Regular' }, // Regular, High Roller, VIP, Whale
   luck: { type: Number, default: 1.0 }, // Luck modifier (Hot streak / Tilt)

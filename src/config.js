@@ -22,6 +22,7 @@ module.exports = {
   ROB_MIN_BAL: 500,
   BAIL_BASE_COST: 7500,
   BAIL_COST_PER_MINUTE: 12,
+  JOB_CHANGE_COOLDOWN: 60 * 60 * 1000,
 
   // Heist
   HEIST_MIN_PLAYERS: 2,
