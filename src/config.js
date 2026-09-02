@@ -12,10 +12,14 @@ module.exports = {
   // Economy
   DAILY_AMOUNT: 1000,
   DAILY_COOLDOWN: 24 * 60 * 60 * 1000,
-  WORK_MIN: 250,
-  WORK_MAX: 750,
+  // Unemployed work pays far less than holding a career job, to encourage employment.
+  WORK_MIN: 60,
+  WORK_MAX: 180,
   WORK_COOLDOWN: 60 * 60 * 1000,
   WANTED_WORK_MULTIPLIER: 0.6,
+  // Per-work seniority bonuses within a job tier: wage grows, cooldown stretches.
+  JOB_WORK_WAGE_INCREMENT: 30,
+  JOB_WORK_COOLDOWN_INCREMENT: 60 * 1000,
   ROB_COOLDOWN: 2 * 60 * 60 * 1000,
   ROB_SUCCESS_RATE: 0.5,
   ROB_FINE_PERCENT: 0.25,

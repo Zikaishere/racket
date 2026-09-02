@@ -5,6 +5,7 @@ const { fmt } = require('../../utils/economy');
 const { logAudit } = require('../../utils/audit');
 const { WORK_MIN, WORK_MAX, WANTED_WORK_MULTIPLIER } = require('../../config');
 const { getGuildCooldownMs } = require('../../utils/guildCooldowns');
+const jobWork = require('../jobs/job-work');
 
 const JOBS = [
   'dealt cards at the casino',
@@ -21,6 +22,12 @@ const JOBS = [
 
 const run = async ({ userId, guildId, reply, cooldownMs }) => {
   const currentUser = await User.findOrCreate(userId, guildId);
+
+  // If the user already has a career job, route them straight to the proper
+  // job-work flow so they earn their real (higher) salary.
+  if (currentUser.currentJob) {
+    return jobWork.run({ userId, guildId, reply });
+  }
 
   const earned = Math.floor(Math.random() * (WORK_MAX - WORK_MIN + 1)) + WORK_MIN;
   const wantedActive = currentUser.wantedUntil && new Date(currentUser.wantedUntil).getTime() > Date.now();
@@ -74,12 +81,12 @@ const run = async ({ userId, guildId, reply, cooldownMs }) => {
 module.exports = {
   name: 'work',
   aliases: ['hustle'],
-  description: 'Work a job and earn some raqs.',
+  description: 'Pick up odd jobs for raqs. Get your own career job for far better pay.',
   usage: '',
   category: 'economy',
   guildOnly: true,
 
-  slash: new SlashCommandBuilder().setName('work').setDescription('Work a job and earn some raqs'),
+  slash: new SlashCommandBuilder().setName('work').setDescription('Pick up odd jobs for raqs'),
 
   async execute({ message, guildData }) {
     return run({

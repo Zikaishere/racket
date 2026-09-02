@@ -55,7 +55,7 @@ const run = async ({ userId, guildId, ticker, reply }) => {
     e.addFields({ name: 'Your Position', value: 'You hold no shares in this stock.' });
   }
 
-  const history = await getHistory(t, 60);
+  const history = await getHistory(t, 48);
 
   // Attach a chart when we have at least a couple of data points.
   if (history.length >= 2) {

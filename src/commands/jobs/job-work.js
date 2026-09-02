@@ -4,6 +4,7 @@ const User = require('../../models/User');
 const { getUser, fmt } = require('../../utils/economy');
 const { logAudit } = require('../../utils/audit');
 const { JOBS, getSalary, getJobTierName, getTierName, getWorksForPromotion } = require('../../data/jobs');
+const { JOB_WORK_WAGE_INCREMENT, JOB_WORK_COOLDOWN_INCREMENT } = require('../../config');
 
 const WORK_FLAVOR = {
   pickpocket: ['lifted a fat wallet', 'worked a busy market', 'stole a watch off a mark', 'picked a tourist clean'],
@@ -102,12 +103,16 @@ const run = async ({ userId, guildId, reply }) => {
     });
   }
 
-  const cooldownMs = job.cooldown || 60 * 60 * 1000;
+  // Seniority within the current tier: wage rises and cooldown stretches incrementally
+  // per work completed, rewarding loyalty but pacing higher earners.
+  const worksInTier = user.jobWorks || 0;
+  const effectiveCooldown = (job.cooldown || 60 * 60 * 1000) + worksInTier * JOB_WORK_COOLDOWN_INCREMENT;
+  const effectiveSalary = getSalary(job, user.jobTier) + worksInTier * JOB_WORK_WAGE_INCREMENT;
 
   if (user.lastJobWork) {
     const elapsed = Date.now() - new Date(user.lastJobWork).getTime();
-    if (elapsed < cooldownMs) {
-      const remaining = cooldownMs - elapsed;
+    if (elapsed < effectiveCooldown) {
+      const remaining = effectiveCooldown - elapsed;
       const mins = Math.ceil(remaining / 60000);
       return reply({
         embeds: [embed.warning('Still Working', `You're still on the clock. Come back in **${mins}m**.`)],
@@ -116,7 +121,7 @@ const run = async ({ userId, guildId, reply }) => {
     }
   }
 
-  const salary = getSalary(job, user.jobTier);
+  const salary = effectiveSalary;
   const flavors = WORK_FLAVOR[job.id] || ['did some work'];
   const flavor = flavors[Math.floor(Math.random() * flavors.length)];
 
@@ -140,7 +145,7 @@ const run = async ({ userId, guildId, reply }) => {
     userId,
     guildId,
     currentJob: job.id,
-    $or: [{ lastJobWork: null }, { lastJobWork: { $lte: new Date(Date.now() - cooldownMs) } }],
+    $or: [{ lastJobWork: null }, { lastJobWork: { $lte: new Date(Date.now() - effectiveCooldown) } }],
   };
 
   const updated = await User.findOneAndUpdate(filter, updateOps, { new: true });
@@ -164,6 +169,10 @@ const run = async ({ userId, guildId, reply }) => {
 
   let message = `You ${flavor} as a **${getJobTierName(job, user.jobTier)} ${job.name}** and earned ${fmt(salary)}.`;
 
+  if (worksInTier > 0 && !gettingPromoted) {
+    message += `\n(Seniority bonus +${fmt(worksInTier * JOB_WORK_WAGE_INCREMENT)})`;
+  }
+
   if (gettingPromoted) {
     const newTierName = getJobTierName(job, nextTier);
     const newTierLabel = getTierName(nextTier);
@@ -174,7 +183,8 @@ const run = async ({ userId, guildId, reply }) => {
     message += `\n\nPromotion progress: ${nextWorks}/${worksForPromo} (${remaining} more to promote)`;
   }
 
-  message += `\n\nCash: ${fmt(updated.wallet)}`;
+  const nextCooldown = effectiveCooldown + JOB_WORK_COOLDOWN_INCREMENT;
+  message += `\n\nNext shift cooldown: ${Math.round(nextCooldown / 60000)}m\nCash: ${fmt(updated.wallet)}`;
 
   return reply({
     embeds: [embed.success('Work Complete', message)],
@@ -188,6 +198,7 @@ module.exports = {
   usage: '',
   category: 'economy',
   guildOnly: true,
+  run,
 
   slash: new SlashCommandBuilder().setName('job-work').setDescription('Work your career job for a salary'),
 

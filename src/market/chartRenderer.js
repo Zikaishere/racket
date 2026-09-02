@@ -223,7 +223,24 @@ async function renderSingleStockChart(stock, history) {
 // each input item: { ticker, name, sector, history: [{ price, t }] }
 async function renderComparisonChart(all) {
   const sectorOrder = Object.keys(SECTOR_LABELS);
-  const tickerColor = new Map(all.map((s, i) => [s.ticker, colorForIndex(i)]));
+
+  // Group by sector so each panel gets distinct, legible colors.
+  const colorGroups = new Map();
+  for (const s of all) {
+    if (!colorGroups.has(s.sector)) colorGroups.set(s.sector, []);
+    colorGroups.get(s.sector).push(s);
+  }
+  const colorKeys = [...colorGroups.keys()].sort((a, b) => {
+    const ia = sectorOrder.indexOf(a);
+    const ib = sectorOrder.indexOf(b);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+
+  // Per-panel color offset keeps colors distinct within a panel.
+  const tickerColor = new Map();
+  colorKeys.forEach((sec, gi) => {
+    colorGroups.get(sec).forEach((s, si) => tickerColor.set(s.ticker, colorForIndex(gi * 4 + si)));
+  });
 
   // Normalize each stock to % change from its first point.
   const items = all.map((s) => {

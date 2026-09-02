@@ -95,6 +95,70 @@ const STOCKS = [
     volatility: 0.05,
     description: 'Where fortunes go to hide. Discreet storage for the wealthy.',
   },
+  {
+    ticker: 'GRID',
+    name: 'Gridworks Power',
+    sector: 'energy',
+    basePrice: 60,
+    volatility: 0.04,
+    description: 'Keeps the city lights on. Utilities are famously boring — and reliable.',
+  },
+  {
+    ticker: 'FUSE',
+    name: 'Fuse Relay Collective',
+    sector: 'energy',
+    basePrice: 45,
+    volatility: 0.05,
+    description: 'The black-market grid. Powers the places the utilities pretend dont exist.',
+  },
+  {
+    ticker: 'MERID',
+    name: 'Meridian Bank',
+    sector: 'finance',
+    basePrice: 95,
+    volatility: 0.035,
+    description: 'The bank every racket launders through. Too big to touch.',
+  },
+  {
+    ticker: 'LEDGER',
+    name: 'Ledger Trust',
+    sector: 'finance',
+    basePrice: 70,
+    volatility: 0.05,
+    description: 'Bookkeepers for the underworld. Numbers never disappear without a fee.',
+  },
+  {
+    ticker: 'CYPH',
+    name: 'Cryptex Datacore',
+    sector: 'tech',
+    basePrice: 85,
+    volatility: 0.055,
+    description: 'Encrypted vaults of stolen data. Every breach is a payday.',
+  },
+  {
+    ticker: 'DICE',
+    name: 'Dice & Diamonds',
+    sector: 'casino',
+    basePrice: 35,
+    volatility: 0.07,
+    description: 'Back-room dice tables for those who want to lose faster.',
+  },
+  {
+    ticker: 'TRASH',
+    name: 'Trash Titans',
+    sector: 'street',
+    basePrice: 10,
+    volatility: 0.1,
+    description: 'Scrappers and salvage kings. One man trash is their fortune.',
+  },
+  {
+    ticker: 'TAXI',
+    name: 'Midnight Taxi',
+    sector: 'service',
+    basePrice: 50,
+    volatility: 0.06,
+    description: 'Drivers who ask no questions. Fares paid in cash or favors.',
+  },
 ];
 
 const SECTOR_LABELS = {
@@ -105,10 +169,12 @@ const SECTOR_LABELS = {
   street: 'Street',
   underworld: 'Underworld',
   corporate: 'Corporate',
+  energy: 'Energy',
+  finance: 'Finance',
 };
 
 // Market behavior tuning
-const TICK_INTERVAL_MS = 60 * 1000; // 1 tick per minute
+const TICK_INTERVAL_MS = 30 * 60 * 1000; // one market tick every 30 minutes
 const PRICE_MIN_FACTOR = 0.4; // price can't fall below 40% of base
 const PRICE_MAX_FACTOR = 3.0; // price can't rise above 300% of base
 const MEAN_REVERSION_STRENGTH = 0.02; // pull back toward base each tick

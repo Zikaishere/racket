@@ -1,6 +1,7 @@
 const PriceHistory = require('../models/PriceHistory');
 
-const MAX_POINTS_PER_STOCK = 240; // ~4 hours at 1 min/tick
+const MAX_POINTS_PER_STOCK = 500; // capped points kept per stock
+const HISTORY_WINDOW_MS = 14 * 24 * 60 * 60 * 1000; // keep ~2 weeks of ticks
 
 // Record a snapshot for all stocks. Called once per market tick.
 async function recordSnapshot(prices) {
@@ -13,7 +14,7 @@ async function recordSnapshot(prices) {
 
   // Prune old records to keep the collection bounded.
   await PriceHistory.deleteMany({
-    recordedAt: { $lt: new Date(Date.now() - 4 * 60 * 60 * 1000) },
+    recordedAt: { $lt: new Date(Date.now() - HISTORY_WINDOW_MS) },
   });
 }
 

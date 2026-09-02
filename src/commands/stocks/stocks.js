@@ -37,7 +37,7 @@ const run = async ({ reply }) => {
   try {
     const all = [];
     for (const stock of STOCKS) {
-      const hist = await getHistory(stock.ticker, 60);
+      const hist = await getHistory(stock.ticker, 48);
       if (hist.length >= 2) all.push({ ticker: stock.ticker, sector: stock.sector, history: hist });
     }
     if (all.length >= 2) {
