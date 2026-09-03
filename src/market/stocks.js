@@ -174,7 +174,7 @@ const SECTOR_LABELS = {
 };
 
 // Market behavior tuning
-const TICK_INTERVAL_MS = 30 * 60 * 1000; // one market tick every 30 minutes
+const TICK_INTERVAL_MS = 15 * 60 * 1000; // one market tick every 15 minutes
 const PRICE_MIN_FACTOR = 0.4; // price can't fall below 40% of base
 const PRICE_MAX_FACTOR = 3.0; // price can't rise above 300% of base
 const MEAN_REVERSION_STRENGTH = 0.02; // pull back toward base each tick
