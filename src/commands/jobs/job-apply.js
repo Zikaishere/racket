@@ -92,7 +92,7 @@ const run = async ({ userId, guildId, jobName, reply }) => {
     embeds: [
       embed.success(
         'Job Application Accepted',
-        `Welcome to **${job.name}**!\n\nRank: **${tierName}** (${tierLabel})\nSalary: ${fmt(salary)}/work\n\nUse \`/job-work\` to start earning.`,
+        `Welcome to **${job.name}**!\n\nRank: **${tierName}** (${tierLabel})\nSalary: ${fmt(salary)}/work\n\nUse \`/work\` to start earning.`,
       ),
     ],
   });

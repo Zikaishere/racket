@@ -1,10 +1,9 @@
-const { SlashCommandBuilder } = require('discord.js');
-const embed = require('../../utils/embed');
-const User = require('../../models/User');
-const { getUser, fmt } = require('../../utils/economy');
-const { logAudit } = require('../../utils/audit');
-const { JOBS, getSalary, getJobTierName, getTierName, getWorksForPromotion } = require('../../data/jobs');
-const { JOB_WORK_WAGE_INCREMENT, JOB_WORK_COOLDOWN_INCREMENT } = require('../../config');
+const embed = require('../utils/embed');
+const User = require('../models/User');
+const { getUser, fmt } = require('../utils/economy');
+const { logAudit } = require('../utils/audit');
+const { JOBS, getSalary, getJobTierName, getTierName, getWorksForPromotion } = require('../data/jobs');
+const { JOB_WORK_WAGE_INCREMENT, JOB_WORK_COOLDOWN_INCREMENT } = require('../config');
 
 const WORK_FLAVOR = {
   pickpocket: ['lifted a fat wallet', 'worked a busy market', 'stole a watch off a mark', 'picked a tourist clean'],
@@ -191,30 +190,4 @@ const run = async ({ userId, guildId, reply }) => {
   });
 };
 
-module.exports = {
-  name: 'job-work',
-  aliases: ['jwork'],
-  description: 'Work your career job for a salary.',
-  usage: '',
-  category: 'economy',
-  guildOnly: true,
-  run,
-
-  slash: new SlashCommandBuilder().setName('job-work').setDescription('Work your career job for a salary'),
-
-  async execute({ message }) {
-    return run({
-      userId: message.author.id,
-      guildId: message.guild.id,
-      reply: (data) => message.reply(data),
-    });
-  },
-
-  async executeSlash({ interaction }) {
-    return run({
-      userId: interaction.user.id,
-      guildId: interaction.guild.id,
-      reply: (data) => interaction.reply(data),
-    });
-  },
-};
+module.exports = { run };

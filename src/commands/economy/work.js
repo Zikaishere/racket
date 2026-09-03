@@ -5,7 +5,7 @@ const { fmt } = require('../../utils/economy');
 const { logAudit } = require('../../utils/audit');
 const { WORK_MIN, WORK_MAX, WANTED_WORK_MULTIPLIER } = require('../../config');
 const { getGuildCooldownMs } = require('../../utils/guildCooldowns');
-const jobWork = require('../jobs/job-work');
+const jobWork = require('../../jobs/jobWork');
 
 const JOBS = [
   'dealt cards at the casino',
@@ -23,7 +23,6 @@ const JOBS = [
 const run = async ({ userId, guildId, reply, cooldownMs }) => {
   const currentUser = await User.findOrCreate(userId, guildId);
 
-  // If the user already has a career job, route them straight to the proper
   // job-work flow so they earn their real (higher) salary.
   if (currentUser.currentJob) {
     return jobWork.run({ userId, guildId, reply });
