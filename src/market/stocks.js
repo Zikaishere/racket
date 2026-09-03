@@ -178,7 +178,7 @@ const TICK_INTERVAL_MS = 30 * 60 * 1000; // one market tick every 30 minutes
 const PRICE_MIN_FACTOR = 0.4; // price can't fall below 40% of base
 const PRICE_MAX_FACTOR = 3.0; // price can't rise above 300% of base
 const MEAN_REVERSION_STRENGTH = 0.02; // pull back toward base each tick
-const EVENT_CHANCE = 0.12; // ~12% chance of a market event each tick
+const EVENT_CHANCE = 0.25; // ~25% chance of a market event each tick
 
 // Economic events pool: { type, label, sector?, stock?, intensity, description }
 const EVENTS = [

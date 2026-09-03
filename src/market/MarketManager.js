@@ -64,7 +64,12 @@ class MarketManager {
       }
     }
 
-    if (changed) await this.persist();
+    if (changed) {
+      await this.persist();
+      // Backfill price history for any newly-added stock so it appears on charts
+      // immediately, even before the first market tick records a snapshot.
+      await this.backfillHistory();
+    }
     this.started = true;
     return true;
   }
@@ -83,6 +88,33 @@ class MarketManager {
       });
     }
     if (updates.length) await MarketState.bulkWrite(updates);
+  }
+
+  // For any stock with fewer than 2 recorded points, insert initial points so
+  // charting (which requires >=2 points per sector) shows it right away — even
+  // before the first real market tick records a snapshot.
+  async backfillHistory() {
+    const PriceHistory = require('../models/PriceHistory');
+    const counts = await PriceHistory.aggregate([
+      { $group: { _id: '$ticker', n: { $sum: 1 } } },
+    ]);
+    const countMap = new Map(counts.map((c) => [c._id, c.n]));
+
+    const docs = [];
+    const now = Date.now();
+    for (const stock of STOCKS) {
+      if ((countMap.get(stock.ticker) || 0) >= 2) continue;
+      const state = this.prices.get(stock.ticker);
+      const price = state ? state.price : stock.basePrice;
+      // Two points a few minutes apart so the % change baseline is non-zero.
+      const earlier = price * (0.99 + Math.random() * 0.02);
+      docs.push(
+        { ticker: stock.ticker, price: earlier, recordedAt: new Date(now - 5 * 60 * 1000) },
+        { ticker: stock.ticker, price, recordedAt: new Date(now) },
+      );
+    }
+
+    if (docs.length) await PriceHistory.insertMany(docs);
   }
 
   getStock(ticker) {
