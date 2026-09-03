@@ -111,6 +111,15 @@ userSchema.pre('save', function (next) {
     this.wallet = this.balance;
   }
   this.balance = this.wallet || 0;
+  // Keep raq amounts rounded to at most 2 decimal places.
+  const round = (v) => {
+    const n = Number(v || 0);
+    return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
+  };
+  this.wallet = round(this.wallet);
+  this.balance = round(this.balance);
+  this.bank = round(this.bank);
+  if (this.totalEarned != null) this.totalEarned = round(this.totalEarned);
   next();
 });
 

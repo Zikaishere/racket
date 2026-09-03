@@ -1,8 +1,16 @@
 const User = require('../models/User');
 const { CURRENCY_SYMBOL, CURRENCY_NAME, RANK_THRESHOLDS } = require('../config');
 
+// Round a raq amount to at most 2 decimal places, trimming trailing zeros.
+function roundRaq(amount) {
+  const n = Number(amount || 0);
+  if (!Number.isFinite(n)) return 0;
+  return Math.round(n * 100) / 100;
+}
+
 function fmt(amount) {
-  return `${CURRENCY_SYMBOL} **${Number(amount || 0).toLocaleString()}** ${CURRENCY_NAME}`;
+  const rounded = roundRaq(amount);
+  return `${CURRENCY_SYMBOL} **${rounded.toLocaleString('en-US', { maximumFractionDigits: 2 })}** ${CURRENCY_NAME}`;
 }
 
 async function getUser(userId, guildId) {
@@ -11,10 +19,11 @@ async function getUser(userId, guildId) {
 
 async function addWallet(userId, guildId, amount) {
   const user = await getUser(userId, guildId);
-  user.wallet += amount;
+  const ra = roundRaq(amount);
+  user.wallet = roundRaq(user.wallet) + ra;
   user.balance = user.wallet;
-  if (amount > 0) {
-    user.totalEarned += amount;
+  if (ra > 0) {
+    user.totalEarned = roundRaq(user.totalEarned) + ra;
   }
   await user.save();
   return user.wallet;
@@ -22,8 +31,9 @@ async function addWallet(userId, guildId, amount) {
 
 async function removeWallet(userId, guildId, amount) {
   const user = await getUser(userId, guildId);
-  if (user.wallet < amount) return false;
-  user.wallet -= amount;
+  const ra = roundRaq(amount);
+  if (user.wallet < ra) return false;
+  user.wallet = roundRaq(user.wallet) - ra;
   user.balance = user.wallet;
   await user.save();
   return user.wallet;
@@ -31,19 +41,21 @@ async function removeWallet(userId, guildId, amount) {
 
 async function deposit(userId, guildId, amount) {
   const user = await getUser(userId, guildId);
-  if (user.wallet < amount) return false;
-  user.wallet -= amount;
+  const ra = roundRaq(amount);
+  if (user.wallet < ra) return false;
+  user.wallet = roundRaq(user.wallet) - ra;
   user.balance = user.wallet;
-  user.bank += amount;
+  user.bank = roundRaq(user.bank) + ra;
   await user.save();
   return true;
 }
 
 async function withdraw(userId, guildId, amount) {
   const user = await getUser(userId, guildId);
-  if (user.bank < amount) return false;
-  user.bank -= amount;
-  user.wallet += amount;
+  const ra = roundRaq(amount);
+  if (user.bank < ra) return false;
+  user.bank = roundRaq(user.bank) - ra;
+  user.wallet = roundRaq(user.wallet) + ra;
   user.balance = user.wallet;
   await user.save();
   return true;
@@ -71,14 +83,15 @@ async function removeChips(userId, guildId, amount) {
 
 async function transfer(fromId, toId, guildId, amount) {
   const sender = await getUser(fromId, guildId);
-  if (sender.wallet < amount) return false;
+  const ra = roundRaq(amount);
+  if (sender.wallet < ra) return false;
 
   const recipient = await getUser(toId, guildId);
-  sender.wallet -= amount;
+  sender.wallet = roundRaq(sender.wallet) - ra;
   sender.balance = sender.wallet;
-  recipient.wallet += amount;
+  recipient.wallet = roundRaq(recipient.wallet) + ra;
   recipient.balance = recipient.wallet;
-  recipient.totalEarned += amount;
+  recipient.totalEarned = roundRaq(recipient.totalEarned) + ra;
   await sender.save();
   await recipient.save();
   return true;
@@ -145,6 +158,7 @@ async function recordGame(userId, guildId, won, wagered) {
 
 module.exports = {
   fmt,
+  roundRaq,
   addWallet,
   removeWallet,
   deposit,
